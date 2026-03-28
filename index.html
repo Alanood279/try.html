@@ -16,104 +16,221 @@
             --success: #10b981; --error: #ef4444; --warning: #f59e0b;
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-dark); color: var(--text-primary); overflow: hidden; height: 100vh; }
+        
+        /* الشريط العلوي */
         .top-bar { height: 60px; background: var(--bg-panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: relative; z-index: 100; }
         .logo { font-size: 24px; font-weight: bold; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; gap: 10px; }
-        .top-actions { display: flex; gap: 12px; align-items: center; }
+        .top-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         .btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.3s; display: flex; align-items: center; gap: 6px; font-family: inherit; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.4); }
         .btn-secondary { background: var(--bg-dark); color: var(--text-secondary); border: 1px solid var(--border); }
         .btn-secondary:hover { background: var(--border); color: var(--text-primary); }
         .btn-success { background: var(--success); color: white; }
-        .btn-success:hover { background: #059669; }
-        .main-container { display: flex; height: calc(100vh - 60px); }
-        .tools-sidebar { width: 80px; background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 8px; }
+        
+        /* الحاوية الرئيسية - مرنة */
+        .main-container { display: flex; height: calc(100vh - 60px); position: relative; overflow: hidden; }
+        
+        /* الشريط الجانبي للأدوات - ثابت العرض */
+        .tools-sidebar { width: 80px; background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 8px; flex-shrink: 0; }
         .tool-item { width: 60px; height: 60px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; color: var(--text-secondary); }
         .tool-item:hover, .tool-item.active { background: var(--primary); color: white; transform: scale(1.05); }
         .tool-item i { font-size: 24px; margin-bottom: 4px; }
         .tool-item span { font-size: 11px; }
-        .tools-panel { width: 300px; background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+        
+        /* لوحة الأدوات - قابلة للسحب */
+        .tools-panel { 
+            width: 300px; 
+            min-width: 200px; 
+            max-width: 500px; 
+            background: var(--bg-panel); 
+            border-left: 1px solid var(--border); 
+            display: flex; 
+            flex-direction: column; 
+            overflow-y: auto;
+            position: relative;
+            flex-shrink: 0;
+            transition: width 0.2s ease;
+        }
+        
+        /* مقبض السحب للوحة الأدوات */
+        .resize-handle-panel {
+            position: absolute;
+            left: -5px;
+            top: 0;
+            width: 10px;
+            height: 100%;
+            cursor: ew-resize;
+            background: transparent;
+            z-index: 1000;
+        }
+        
+        .resize-handle-panel:hover {
+            background: var(--primary);
+            opacity: 0.3;
+        }
+        
+        /* لوحة الخصائص - قابلة للسحب */
+        .properties-panel { 
+            width: 280px; 
+            min-width: 200px; 
+            max-width: 450px; 
+            background: var(--bg-panel); 
+            border-right: 1px solid var(--border); 
+            overflow-y: auto;
+            position: relative;
+            flex-shrink: 0;
+            transition: width 0.2s ease;
+        }
+        
+        .resize-handle-props {
+            position: absolute;
+            right: -5px;
+            top: 0;
+            width: 10px;
+            height: 100%;
+            cursor: ew-resize;
+            background: transparent;
+            z-index: 1000;
+        }
+        
+        .resize-handle-props:hover {
+            background: var(--primary);
+            opacity: 0.3;
+        }
+        
+        /* منطقة العمل - تأخذ المساحة المتبقية */
+        .workspace { 
+            flex: 1; 
+            background: var(--bg-canvas); 
+            position: relative; 
+            overflow: auto; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 20px;
+            min-width: 0;
+        }
+        
+        /* حاوية اللوحة القماشية - قابلة للتكبير */
+        .canvas-container { 
+            position: relative; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            min-width: 300px;
+            min-height: 200px;
+        }
+        
+        /* اللوحة القماشية - حجمها قابل للتعديل */
+        .canvas { 
+            background: white; 
+            position: relative; 
+            overflow: hidden;
+            width: 1200px;
+            height: 800px;
+            transition: width 0.2s, height 0.2s;
+        }
+        
+        /* أزرار التحكم بحجم الورقة */
+        .canvas-size-controls {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-panel);
+            border-radius: 8px;
+            padding: 5px 10px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+            white-space: nowrap;
+            box-shadow: var(--shadow);
+        }
+        
+        .size-btn {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .size-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .size-input {
+            width: 70px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            text-align: center;
+        }
+        
+        /* باقي الأنماط كما هي */
         .panel-header { padding: 20px; border-bottom: 1px solid var(--border); font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
         .panel-content { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
         .section-title { font-size: 12px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
         .elements-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .element-item { aspect-ratio: 1; background: var(--bg-dark); border: 2px solid var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; font-size: 28px; position: relative; overflow: hidden; }
-        .element-item:hover { border-color: var(--primary); transform: scale(1.05) translateY(-2px); background: var(--bg-panel); box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
-        .workspace { flex: 1; background: var(--bg-canvas); position: relative; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 40px; }
-        .canvas-container { position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
-        .canvas { width: 800px; height: 600px; background: white; position: relative; overflow: hidden; }
+        .element-item { aspect-ratio: 1; background: var(--bg-dark); border: 2px solid var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; font-size: 28px; }
+        .element-item:hover { border-color: var(--primary); transform: scale(1.05); background: var(--bg-panel); }
         .canvas-element { position: absolute; cursor: move; user-select: none; transition: box-shadow 0.2s; }
-        .canvas-element.selected { outline: 2px solid var(--primary); outline-offset: 2px; box-shadow: 0 0 0 4px rgba(99,102,241,0.2); z-index: 1000; }
-        .canvas-element:hover { box-shadow: 0 0 0 2px rgba(99,102,241,0.3); }
-        .canvas-element.dragging { opacity: 0.8; cursor: grabbing; }
+        .canvas-element.selected { outline: 2px solid var(--primary); outline-offset: 2px; z-index: 1000; }
         .resize-handles { position: absolute; width: 100%; height: 100%; pointer-events: none; display: none; }
         .canvas-element.selected .resize-handles { display: block; }
-        .handle { position: absolute; width: 12px; height: 12px; background: white; border: 2px solid var(--primary); border-radius: 50%; pointer-events: all; cursor: pointer; transition: transform 0.2s, background 0.2s; }
-        .handle:hover { transform: scale(1.3); background: var(--primary); }
+        .handle { position: absolute; width: 12px; height: 12px; background: white; border: 2px solid var(--primary); border-radius: 50%; pointer-events: all; cursor: pointer; }
         .handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
         .handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
         .handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
         .handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
-        .handle.n { top: -6px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
-        .handle.s { bottom: -6px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
-        .handle.w { left: -6px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
-        .handle.e { right: -6px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
-        .properties-panel { width: 280px; background: var(--bg-panel); border-right: 1px solid var(--border); overflow-y: auto; }
         .property-group { padding: 20px; border-bottom: 1px solid var(--border); }
         .property-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; display: block; }
-        .property-input { width: 100%; padding: 8px 12px; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 14px; transition: border-color 0.3s; }
-        .property-input:focus { outline: none; border-color: var(--primary); }
-        .property-row { display: flex; gap: 10px; margin-bottom: 12px; }
-        .property-col { flex: 1; }
-        input[type="color"] { width: 100%; height: 40px; border: none; border-radius: 6px; cursor: pointer; }
-        input[type="range"] { width: 100%; margin-top: 5px; accent-color: var(--primary); }
+        .property-input { width: 100%; padding: 8px 12px; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 14px; }
         .color-presets { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
         .color-preset { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s; }
-        .color-preset:hover { transform: scale(1.2); border-color: white; box-shadow: 0 0 0 2px var(--primary); }
-        .text-effects { display: flex; gap: 8px; flex-wrap: wrap; }
-        .effect-btn { padding: 6px 12px; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); cursor: pointer; font-size: 12px; transition: all 0.3s; }
-        .effect-btn:hover, .effect-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .color-preset:hover { transform: scale(1.2); border-color: white; }
         .hidden { display: none !important; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .tool-category { margin-bottom: 24px; }
-        .category-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 12px; background: var(--bg-dark); border-radius: 8px; margin-bottom: 12px; transition: background 0.3s; }
-        .category-header:hover { background: var(--border); }
-        .category-content { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .layer-btn { flex: 1; padding: 8px; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); cursor: pointer; font-size: 12px; transition: all 0.3s; }
-        .layer-btn:hover { background: var(--primary); color: white; }
-        .font-preview { padding: 10px; background: var(--bg-dark); border-radius: 6px; margin-top: 8px; font-size: 18px; text-align: center; border: 1px solid var(--border); }
         .grid-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: linear-gradient(rgba(99,102,241,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.1) 1px, transparent 1px); background-size: 20px 20px; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
         .grid-overlay.visible { opacity: 1; }
-        .style-presets { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; }
-        .style-preset { min-width: 80px; height: 80px; background: var(--bg-dark); border: 2px solid var(--border); border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; font-size: 14px; flex-direction: column; gap: 5px; }
-        .style-preset:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
-        ::-webkit-scrollbar { width: 10px; height: 10px; }
-        ::-webkit-scrollbar-track { background: var(--bg-dark); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 10px; }
-        .notification { position: fixed; bottom: 20px; right: 20px; padding: 14px 24px; border-radius: 8px; z-index: 10000; animation: slideIn 0.3s ease; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; min-width: 250px; }
-        .notification.success { background: var(--success); color: white; }
-        .notification.error { background: var(--error); color: white; }
-        .notification.info { background: var(--primary); color: white; }
-        .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; }
+        .notification { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; background: var(--success); color: white; border-radius: 8px; z-index: 10000; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 10000; }
         .loading-overlay.active { display: flex; }
-        .loading-spinner { width: 60px; height: 60px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-        .loading-text { margin-top: 20px; color: var(--text-primary); font-size: 16px; }
-        .template-grid { display: grid; gap: 12px; }
-        .template-item { padding: 24px; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden; font-weight: 600; color: white; }
-        .template-item:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
-        .canvas-element[contenteditable="true"] { cursor: text; outline: none; }
-        .canvas-element[contenteditable="true"]:focus { outline: 2px solid var(--primary); }
+        .loading-spinner { width: 50px; height: 50px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .layer-controls { display: flex; gap: 8px; margin-top: 16px; }
-        select.property-input { -webkit-appearance: none; appearance: none; }
+        .layer-btn { flex: 1; padding: 8px; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); cursor: pointer; font-size: 12px; transition: all 0.3s; }
+        .layer-btn:hover { background: var(--primary); color: white; }
+        .text-effects { display: flex; gap: 8px; flex-wrap: wrap; }
+        .effect-btn { padding: 6px 12px; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); cursor: pointer; font-size: 12px; }
+        .effect-btn:hover, .effect-btn.active { background: var(--primary); color: white; }
+        .template-grid { display: grid; gap: 12px; }
+        .template-item { padding: 20px; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.3s; font-weight: 600; color: white; }
+        .template-item:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .property-row { display: flex; gap: 10px; margin-bottom: 12px; }
+        .property-col { flex: 1; }
+        .category-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 12px; background: var(--bg-dark); border-radius: 8px; margin-bottom: 12px; }
+        .category-content { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        
+        /* شريط تمرير مخصص */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
     </style>
 </head>
 <body>
 
 <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
-    <div class="loading-text">جاري معالجة التصميم...</div>
+    <div class="loading-text" style="margin-top:20px;color:white">جاري معالجة التصميم...</div>
 </div>
 
 <div class="top-bar">
@@ -123,79 +240,48 @@
     </div>
     <div style="flex: 1; text-align: center;">
         <input type="text" value="مشروع تصميم جديد" id="projectName"
-            style="background: transparent; border: none; color: var(--text-primary); font-size: 16px; text-align: center; outline: none; padding: 8px; border-radius: 6px; transition: background 0.3s;"
-            onfocus="this.style.background='var(--bg-dark)'"
-            onblur="this.style.background='transparent'">
+            style="background: transparent; border: none; color: var(--text-primary); font-size: 16px; text-align: center; outline: none; padding: 8px; border-radius: 6px;">
     </div>
     <div class="top-actions">
-        <button class="btn btn-secondary" onclick="undo()" title="تراجع (Ctrl+Z)"><i class="fas fa-undo"></i> تراجع</button>
-        <button class="btn btn-secondary" onclick="redo()" title="إعادة (Ctrl+Y)"><i class="fas fa-redo"></i> إعادة</button>
-        <button class="btn btn-secondary" onclick="toggleGrid()" title="شبكة"><i class="fas fa-border-all"></i> شبكة</button>
-        <button class="btn btn-secondary" onclick="saveProject()" title="حفظ (Ctrl+S)"><i class="fas fa-save"></i> حفظ</button>
-        <button class="btn btn-secondary" onclick="loadLastProject()" title="استعادة"><i class="fas fa-folder-open"></i> استعادة</button>
+        <button class="btn btn-secondary" onclick="undo()"><i class="fas fa-undo"></i> تراجع</button>
+        <button class="btn btn-secondary" onclick="redo()"><i class="fas fa-redo"></i> إعادة</button>
+        <button class="btn btn-secondary" onclick="toggleGrid()"><i class="fas fa-border-all"></i> شبكة</button>
+        <button class="btn btn-secondary" onclick="saveProject()"><i class="fas fa-save"></i> حفظ</button>
         <button class="btn btn-primary" onclick="exportDesign()"><i class="fas fa-download"></i> تصدير PNG</button>
     </div>
 </div>
 
 <div class="main-container">
-    <!-- شريط الأدوات الجانبي -->
+    <!-- الشريط الجانبي للأدوات -->
     <div class="tools-sidebar">
         <div class="tool-item active" onclick="switchTool('elements')" data-tool="elements"><i class="fas fa-shapes"></i><span>عناصر</span></div>
         <div class="tool-item" onclick="switchTool('text')" data-tool="text"><i class="fas fa-font"></i><span>نص</span></div>
         <div class="tool-item" onclick="switchTool('images')" data-tool="images"><i class="fas fa-image"></i><span>صور</span></div>
-        <div class="tool-item" onclick="switchTool('uploads')" data-tool="uploads"><i class="fas fa-cloud-upload-alt"></i><span>رفع</span></div>
-        <div class="tool-item" onclick="switchTool('backgrounds')" data-tool="backgrounds"><i class="fas fa-palette"></i><span>خلفية</span></div>
         <div class="tool-item" onclick="switchTool('templates')" data-tool="templates"><i class="fas fa-th-large"></i><span>قوالب</span></div>
+        <div class="tool-item" onclick="switchTool('backgrounds')" data-tool="backgrounds"><i class="fas fa-palette"></i><span>خلفية</span></div>
     </div>
 
-    <!-- لوحة الأدوات -->
+    <!-- لوحة الأدوات الموسعة - قابلة للسحب -->
     <div class="tools-panel" id="toolsPanel">
-
+        <div class="resize-handle-panel" id="resizeToolsHandle"></div>
+        
         <!-- عناصر -->
         <div id="panel-elements" class="panel-section">
             <div class="panel-header"><i class="fas fa-shapes"></i> العناصر</div>
             <div class="panel-content">
-                <div class="tool-category">
-                    <div class="category-header" onclick="toggleCategory(this)">
-                        <span><i class="fas fa-square"></i> الأشكال الأساسية</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="category-content">
-                        <div class="element-item" onclick="addShape('rect')" title="مربع"><i class="fas fa-square" style="color:#6366f1"></i></div>
-                        <div class="element-item" onclick="addShape('circle')" title="دائرة"><i class="fas fa-circle" style="color:#6366f1"></i></div>
-                        <div class="element-item" onclick="addShape('rounded')" title="زوايا دائرية"><i class="fas fa-square" style="color:#6366f1;border-radius:30%"></i></div>
-                        <div class="element-item" onclick="addShape('triangle')" title="مثلث"><i class="fas fa-play" style="color:#6366f1;transform:rotate(-90deg)"></i></div>
-                        <div class="element-item" onclick="addShape('hexagon')" title="سداسي"><i class="fas fa-stop" style="color:#6366f1"></i></div>
-                        <div class="element-item" onclick="addShape('star')" title="نجمة"><i class="fas fa-star" style="color:#6366f1"></i></div>
-                    </div>
+                <div class="elements-grid">
+                    <div class="element-item" onclick="addShape('rect')"><i class="fas fa-square"></i></div>
+                    <div class="element-item" onclick="addShape('circle')"><i class="fas fa-circle"></i></div>
+                    <div class="element-item" onclick="addShape('rounded')"><i class="fas fa-square" style="border-radius:30%"></i></div>
+                    <div class="element-item" onclick="addShape('triangle')"><i class="fas fa-play" style="transform:rotate(-90deg)"></i></div>
+                    <div class="element-item" onclick="addIcon('heart')"><i class="fas fa-heart" style="color:#ef4444"></i></div>
+                    <div class="element-item" onclick="addIcon('star')"><i class="fas fa-star" style="color:#f59e0b"></i></div>
                 </div>
-                <div class="tool-category">
-                    <div class="category-header" onclick="toggleCategory(this)">
-                        <span><i class="fas fa-icons"></i> الأيقونات</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="category-content">
-                        <div class="element-item" onclick="addIcon('home')"><i class="fas fa-home"></i></div>
-                        <div class="element-item" onclick="addIcon('user')"><i class="fas fa-user"></i></div>
-                        <div class="element-item" onclick="addIcon('heart')"><i class="fas fa-heart" style="color:#ef4444"></i></div>
-                        <div class="element-item" onclick="addIcon('star')"><i class="fas fa-star" style="color:#f59e0b"></i></div>
-                        <div class="element-item" onclick="addIcon('mail')"><i class="fas fa-envelope"></i></div>
-                        <div class="element-item" onclick="addIcon('phone')"><i class="fas fa-phone"></i></div>
-                    </div>
-                </div>
-                <div class="tool-category">
-                    <div class="category-header" onclick="toggleCategory(this)">
-                        <span><i class="fas fa-sticky-note"></i> الملصقات</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="category-content">
-                        <div class="element-item" onclick="addSticker('😀')">😀</div>
-                        <div class="element-item" onclick="addSticker('👍')">👍</div>
-                        <div class="element-item" onclick="addSticker('✨')">✨</div>
-                        <div class="element-item" onclick="addSticker('🔥')">🔥</div>
-                        <div class="element-item" onclick="addSticker('💡')">💡</div>
-                        <div class="element-item" onclick="addSticker('🎯')">🎯</div>
-                    </div>
+                <div class="section-title" style="margin-top:10px">📝 نصوص جاهزة</div>
+                <div class="elements-grid">
+                    <div class="element-item" onclick="addTextStyle('heading')" style="font-size:20px; font-weight:bold">عنوان</div>
+                    <div class="element-item" onclick="addTextStyle('body')" style="font-size:16px">نص</div>
+                    <div class="element-item" onclick="addText()" style="font-size:24px">+</div>
                 </div>
             </div>
         </div>
@@ -204,36 +290,13 @@
         <div id="panel-text" class="panel-section hidden">
             <div class="panel-header"><i class="fas fa-font"></i> النصوص</div>
             <div class="panel-content">
-                <button class="btn btn-primary" style="width:100%;padding:12px" onclick="addText()"><i class="fas fa-plus"></i> إضافة نص جديد</button>
-                <div class="tool-category">
-                    <div class="section-title"><i class="fas fa-magic"></i> أنماط جاهزة</div>
-                    <div class="style-presets">
-                        <div class="style-preset" onclick="addTextStyle('heading')"><i class="fas fa-heading" style="font-size:24px"></i><span>عنوان</span></div>
-                        <div class="style-preset" onclick="addTextStyle('subheading')"><i class="fas fa-font" style="font-size:18px"></i><span>فرعي</span></div>
-                        <div class="style-preset" onclick="addTextStyle('body')"><i class="fas fa-paragraph" style="font-size:14px"></i><span>نص</span></div>
-                    </div>
-                </div>
-                <div class="tool-category">
-                    <div class="section-title"><i class="fas fa-font"></i> الخطوط</div>
-                    <select class="property-input" onchange="changeFont(this.value)" style="padding:10px">
-                        <option value="Segoe UI">Segoe UI (افتراضي)</option>
-                        <option value="Arial">Arial</option>
-                        <option value="Tahoma">Tahoma</option>
-                        <option value="Georgia">Georgia</option>
-                        <option value="Courier New">Courier New</option>
-                        <option value="Impact">Impact</option>
-                        <option value="Comic Sans MS">Comic Sans MS</option>
-                    </select>
-                    <div class="font-preview" id="fontPreview">نص تجريبي</div>
-                </div>
-                <div class="tool-category">
-                    <div class="section-title"><i class="fas fa-align-left"></i> المحاذاة</div>
-                    <div class="text-effects">
-                        <button class="effect-btn" onclick="setTextAlign('left')"><i class="fas fa-align-left"></i></button>
-                        <button class="effect-btn" onclick="setTextAlign('center')"><i class="fas fa-align-center"></i></button>
-                        <button class="effect-btn" onclick="setTextAlign('right')"><i class="fas fa-align-right"></i></button>
-                    </div>
-                </div>
+                <button class="btn btn-primary" style="width:100%" onclick="addText()"><i class="fas fa-plus"></i> إضافة نص جديد</button>
+                <div class="section-title"><i class="fas fa-font"></i> الخطوط</div>
+                <select class="property-input" onchange="changeFont(this.value)">
+                    <option value="Segoe UI">Segoe UI</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Tahoma">Tahoma</option>
+                </select>
             </div>
         </div>
 
@@ -241,29 +304,22 @@
         <div id="panel-images" class="panel-section hidden">
             <div class="panel-header"><i class="fas fa-image"></i> الصور</div>
             <div class="panel-content">
-                <div class="tool-category">
-                    <div class="section-title"><i class="fas fa-images"></i> تدرجات لونية</div>
-                    <div class="elements-grid">
-                        <div class="element-item" style="background:linear-gradient(45deg,#ff6b6b,#4ecdc4)" onclick="addGradientBlock('linear-gradient(45deg,#ff6b6b,#4ecdc4)')"></div>
-                        <div class="element-item" style="background:linear-gradient(45deg,#667eea,#764ba2)" onclick="addGradientBlock('linear-gradient(45deg,#667eea,#764ba2)')"></div>
-                        <div class="element-item" style="background:linear-gradient(45deg,#f093fb,#f5576c)" onclick="addGradientBlock('linear-gradient(45deg,#f093fb,#f5576c)')"></div>
-                        <div class="element-item" style="background:linear-gradient(45deg,#4facfe,#00f2fe)" onclick="addGradientBlock('linear-gradient(45deg,#4facfe,#00f2fe)')"></div>
-                        <div class="element-item" style="background:linear-gradient(45deg,#43e97b,#38f9d7)" onclick="addGradientBlock('linear-gradient(45deg,#43e97b,#38f9d7)')"></div>
-                        <div class="element-item" style="background:linear-gradient(45deg,#fa709a,#fee140)" onclick="addGradientBlock('linear-gradient(45deg,#fa709a,#fee140)')"></div>
-                    </div>
+                <div style="border:2px dashed var(--border);border-radius:12px;padding:30px;text-align:center;cursor:pointer" onclick="document.getElementById('imageInput').click()">
+                    <i class="fas fa-cloud-upload-alt" style="font-size:48px;color:var(--primary)"></i>
+                    <div>انقر لرفع صورة</div>
+                    <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
                 </div>
-                <div class="tool-category">
-                    <div class="section-title"><i class="fas fa-upload"></i> رفع صورة</div>
-                    <div style="border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:all 0.3s"
-                        ondragover="event.preventDefault();this.style.borderColor='var(--primary)'"
-                        ondragleave="this.style.borderColor='var(--border)'"
-                        ondrop="handleDrop(event)"
-                        onclick="document.getElementById('imageInput').click()">
-                        <i class="fas fa-cloud-upload-alt" style="font-size:48px;color:var(--primary);margin-bottom:15px;display:block"></i>
-                        <div style="font-size:16px;margin-bottom:8px">اسحب أو انقر للرفع</div>
-                        <div style="font-size:12px;color:var(--text-secondary)">JPG, PNG, GIF, WebP</div>
-                        <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
-                    </div>
+            </div>
+        </div>
+
+        <!-- قوالب -->
+        <div id="panel-templates" class="panel-section hidden">
+            <div class="panel-header"><i class="fas fa-th-large"></i> القوالب</div>
+            <div class="panel-content">
+                <div class="template-grid">
+                    <div class="template-item" onclick="loadTemplate('social')" style="background:linear-gradient(135deg,#667eea,#764ba2)">📱 منشور وسائل تواصل</div>
+                    <div class="template-item" onclick="loadTemplate('poster')" style="background:linear-gradient(135deg,#f093fb,#f5576c)">🎨 بوستر إعلاني</div>
+                    <div class="template-item" onclick="loadTemplate('card')" style="background:linear-gradient(135deg,#4facfe,#00f2fe)">💳 بطاقة أعمال</div>
                 </div>
             </div>
         </div>
@@ -272,94 +328,48 @@
         <div id="panel-backgrounds" class="panel-section hidden">
             <div class="panel-header"><i class="fas fa-palette"></i> الخلفيات</div>
             <div class="panel-content">
-                <div class="tool-category">
-                    <div class="section-title"><i class="fas fa-fill-drip"></i> ألوان ثابتة</div>
-                    <div class="color-presets">
-                        <div class="color-preset" style="background:#ffffff" onclick="setBackground('#ffffff')"></div>
-                        <div class="color-preset" style="background:#000000" onclick="setBackground('#000000')"></div>
-                        <div class="color-preset" style="background:#0f172a" onclick="setBackground('#0f172a')"></div>
-                        <div class="color-preset" style="background:#1e293b" onclick="setBackground('#1e293b')"></div>
-                        <div class="color-preset" style="background:#334155" onclick="setBackground('#334155')"></div>
-                        <div class="color-preset" style="background:#64748b" onclick="setBackground('#64748b')"></div>
-                        <div class="color-preset" style="background:#f1f5f9" onclick="setBackground('#f1f5f9')"></div>
-                        <div class="color-preset" style="background:#fef3c7" onclick="setBackground('#fef3c7')"></div>
-                    </div>
+                <div class="color-presets">
+                    <div class="color-preset" style="background:#ffffff" onclick="setBackground('#ffffff')"></div>
+                    <div class="color-preset" style="background:#000000" onclick="setBackground('#000000')"></div>
+                    <div class="color-preset" style="background:#667eea" onclick="setBackground('#667eea')"></div>
+                    <div class="color-preset" style="background:#f093fb" onclick="setBackground('#f093fb')"></div>
                 </div>
-                <div class="tool-category">
-                    <div class="section-title"><i class="fas fa-rainbow"></i> تدرجات لونية</div>
-                    <div class="elements-grid">
-                        <div class="element-item" style="background:linear-gradient(135deg,#667eea,#764ba2)" onclick="setBackground('linear-gradient(135deg,#667eea,#764ba2)')"></div>
-                        <div class="element-item" style="background:linear-gradient(135deg,#f093fb,#f5576c)" onclick="setBackground('linear-gradient(135deg,#f093fb,#f5576c)')"></div>
-                        <div class="element-item" style="background:linear-gradient(135deg,#4facfe,#00f2fe)" onclick="setBackground('linear-gradient(135deg,#4facfe,#00f2fe)')"></div>
-                        <div class="element-item" style="background:linear-gradient(135deg,#43e97b,#38f9d7)" onclick="setBackground('linear-gradient(135deg,#43e97b,#38f9d7)')"></div>
-                        <div class="element-item" style="background:linear-gradient(135deg,#fa709a,#fee140)" onclick="setBackground('linear-gradient(135deg,#fa709a,#fee140)')"></div>
-                        <div class="element-item" style="background:linear-gradient(135deg,#30cfd0,#330867)" onclick="setBackground('linear-gradient(135deg,#30cfd0,#330867)')"></div>
-                    </div>
+                <div class="elements-grid" style="margin-top:10px">
+                    <div class="element-item" style="background:linear-gradient(135deg,#667eea,#764ba2)" onclick="setBackground('linear-gradient(135deg,#667eea,#764ba2)')"></div>
+                    <div class="element-item" style="background:linear-gradient(135deg,#f093fb,#f5576c)" onclick="setBackground('linear-gradient(135deg,#f093fb,#f5576c)')"></div>
                 </div>
             </div>
         </div>
-
-        <!-- قوالب -->
-        <div id="panel-templates" class="panel-section hidden">
-            <div class="panel-header"><i class="fas fa-th-large"></i> القوالب الجاهزة</div>
-            <div class="panel-content">
-                <div class="template-grid">
-                    <div class="template-item" onclick="loadTemplate('social')" style="background:linear-gradient(135deg,#667eea,#764ba2)">
-                        <i class="fas fa-share-alt" style="font-size:32px;margin-bottom:10px;display:block"></i>
-                        <div>منشور وسائل تواصل</div><div style="font-size:12px;opacity:0.8;margin-top:5px">1080 × 1080</div>
-                    </div>
-                    <div class="template-item" onclick="loadTemplate('poster')" style="background:linear-gradient(135deg,#f093fb,#f5576c)">
-                        <i class="fas fa-file-image" style="font-size:32px;margin-bottom:10px;display:block"></i>
-                        <div>بوستر إعلاني</div><div style="font-size:12px;opacity:0.8;margin-top:5px">800 × 1200</div>
-                    </div>
-                    <div class="template-item" onclick="loadTemplate('card')" style="background:linear-gradient(135deg,#4facfe,#00f2fe)">
-                        <i class="fas fa-id-card" style="font-size:32px;margin-bottom:10px;display:block"></i>
-                        <div>بطاقة أعمال</div><div style="font-size:12px;opacity:0.8;margin-top:5px">900 × 500</div>
-                    </div>
-                    <div class="template-item" onclick="loadTemplate('banner')" style="background:linear-gradient(135deg,#43e97b,#38f9d7)">
-                        <i class="fas fa-ad" style="font-size:32px;margin-bottom:10px;display:block"></i>
-                        <div>بانر ويب</div><div style="font-size:12px;opacity:0.8;margin-top:5px">1200 × 400</div>
-                    </div>
-                    <div class="template-item" onclick="loadTemplate('story')" style="background:linear-gradient(135deg,#fa709a,#fee140)">
-                        <i class="fas fa-mobile-alt" style="font-size:32px;margin-bottom:10px;display:block"></i>
-                        <div>Story</div><div style="font-size:12px;opacity:0.8;margin-top:5px">1080 × 1920</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- رفع -->
-        <div id="panel-uploads" class="panel-section hidden">
-            <div class="panel-header"><i class="fas fa-cloud-upload-alt"></i> الملفات المرفوعة</div>
-            <div class="panel-content">
-                <div id="uploadsList">
-                    <div style="text-align:center;color:var(--text-secondary);padding:40px">
-                        <i class="fas fa-folder-open" style="font-size:48px;margin-bottom:15px;opacity:0.5;display:block"></i>
-                        <div>لا توجد ملفات مرفوعة بعد</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
 
     <!-- مساحة العمل -->
-    <div class="workspace" id="workspace" onclick="handleWorkspaceClick(event)">
+    <div class="workspace" id="workspace">
         <div class="canvas-container">
             <div class="canvas" id="canvas">
                 <div class="grid-overlay" id="gridOverlay"></div>
             </div>
+            <!-- أزرار التحكم بحجم الورقة -->
+            <div class="canvas-size-controls">
+                <button class="size-btn" onclick="setCanvasSize(800,600)">📱 صغير (800×600)</button>
+                <button class="size-btn" onclick="setCanvasSize(1200,800)">🖥️ متوسط (1200×800)</button>
+                <button class="size-btn" onclick="setCanvasSize(1920,1080)">📺 كبير (1920×1080)</button>
+                <button class="size-btn" onclick="setCanvasSize(3000,2000)">🎨 كبير جداً (3000×2000)</button>
+                <button class="size-btn" onclick="fitToWorkspace()">🔍 ملاءمة للشاشة</button>
+                <input type="number" id="customWidth" placeholder="العرض" class="size-input" style="width:80px">
+                <input type="number" id="customHeight" placeholder="الارتفاع" class="size-input" style="width:80px">
+                <button class="size-btn" onclick="setCustomSize()">تطبيق</button>
+            </div>
         </div>
     </div>
 
-    <!-- لوحة الخصائص -->
+    <!-- لوحة الخصائص - قابلة للسحب -->
     <div class="properties-panel" id="propertiesPanel">
+        <div class="resize-handle-props" id="resizePropsHandle"></div>
         <div class="panel-header"><i class="fas fa-sliders-h"></i> الخصائص</div>
         <div class="panel-content" id="propertiesContent">
             <div style="text-align:center;color:var(--text-secondary);padding:40px">
-                <i class="fas fa-mouse-pointer" style="font-size:48px;margin-bottom:15px;opacity:0.3;display:block"></i>
+                <i class="fas fa-mouse-pointer" style="font-size:48px;margin-bottom:15px"></i>
                 <div>اختر عنصراً للتعديل</div>
-                <div style="font-size:12px;margin-top:10px;opacity:0.7">اضغط على أي عنصر في مساحة العمل</div>
             </div>
         </div>
     </div>
@@ -370,36 +380,107 @@
 let selectedElement = null;
 let elementCounter = 0;
 let isDragging = false;
-let isResizing = false;
 let currentHandle = null;
-let startX, startY, startWidth, startHeight, startLeft, startTop;
 let history = [];
 let historyStep = -1;
-let uploadedFiles = [];
-let gridVisible = false;
+let toolsPanelWidth = 300;
+let propsPanelWidth = 280;
 
-// ===================== تبديل الأدوات =====================
-function switchTool(tool) {
-    document.querySelectorAll('.tool-item').forEach(i => i.classList.remove('active'));
-    document.querySelector(`[data-tool="${tool}"]`).classList.add('active');
-    document.querySelectorAll('.panel-section').forEach(p => p.classList.add('hidden'));
-    document.getElementById(`panel-${tool}`).classList.remove('hidden');
-}
-
-function toggleCategory(header) {
-    const content = header.nextElementSibling;
-    const arrow = header.querySelector('.fa-chevron-down');
-    if (!content) return;
-    if (content.style.display === 'none') {
-        content.style.display = 'grid';
-        if (arrow) arrow.style.transform = 'rotate(0deg)';
-    } else {
-        content.style.display = 'none';
-        if (arrow) arrow.style.transform = 'rotate(-90deg)';
+// ===================== التحكم بحجم الألواح =====================
+function initResizablePanels() {
+    const toolsPanel = document.getElementById('toolsPanel');
+    const propsPanel = document.getElementById('propertiesPanel');
+    const toolsHandle = document.getElementById('resizeToolsHandle');
+    const propsHandle = document.getElementById('resizePropsHandle');
+    
+    let startX, startWidth;
+    
+    // سحب لوحة الأدوات
+    toolsHandle.addEventListener('mousedown', (e) => {
+        startX = e.clientX;
+        startWidth = toolsPanel.offsetWidth;
+        document.addEventListener('mousemove', onToolsMouseMove);
+        document.addEventListener('mouseup', onToolsMouseUp);
+        e.preventDefault();
+    });
+    
+    function onToolsMouseMove(e) {
+        const dx = startX - e.clientX;
+        let newWidth = startWidth + dx;
+        newWidth = Math.min(500, Math.max(200, newWidth));
+        toolsPanel.style.width = newWidth + 'px';
+        toolsPanelWidth = newWidth;
+    }
+    
+    function onToolsMouseUp() {
+        document.removeEventListener('mousemove', onToolsMouseMove);
+        document.removeEventListener('mouseup', onToolsMouseUp);
+    }
+    
+    // سحب لوحة الخصائص
+    propsHandle.addEventListener('mousedown', (e) => {
+        startX = e.clientX;
+        startWidth = propsPanel.offsetWidth;
+        document.addEventListener('mousemove', onPropsMouseMove);
+        document.addEventListener('mouseup', onPropsMouseUp);
+        e.preventDefault();
+    });
+    
+    function onPropsMouseMove(e) {
+        const dx = e.clientX - startX;
+        let newWidth = startWidth + dx;
+        newWidth = Math.min(450, Math.max(200, newWidth));
+        propsPanel.style.width = newWidth + 'px';
+        propsPanelWidth = newWidth;
+    }
+    
+    function onPropsMouseUp() {
+        document.removeEventListener('mousemove', onPropsMouseMove);
+        document.removeEventListener('mouseup', onPropsMouseUp);
     }
 }
 
-// ===================== إضافة عناصر =====================
+// ===================== التحكم بحجم الورقة =====================
+function setCanvasSize(width, height) {
+    const canvas = document.getElementById('canvas');
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    document.querySelector('.canvas-container').style.width = width + 'px';
+    document.querySelector('.canvas-container').style.height = height + 'px';
+    saveHistory();
+    showNotification(`تم تغيير حجم الورقة إلى ${width}×${height}`);
+}
+
+function setCustomSize() {
+    const width = parseInt(document.getElementById('customWidth').value);
+    const height = parseInt(document.getElementById('customHeight').value);
+    if (width > 0 && height > 0) {
+        setCanvasSize(width, height);
+    } else {
+        showNotification('الرجاء إدخال أبعاد صحيحة', 'error');
+    }
+}
+
+function fitToWorkspace() {
+    const workspace = document.getElementById('workspace');
+    const canvas = document.getElementById('canvas');
+    const container = document.querySelector('.canvas-container');
+    const workspaceRect = workspace.getBoundingClientRect();
+    const canvasWidth = canvas.offsetWidth;
+    const canvasHeight = canvas.offsetHeight;
+    
+    let scale = Math.min(
+        (workspaceRect.width - 60) / canvasWidth,
+        (workspaceRect.height - 80) / canvasHeight
+    );
+    
+    scale = Math.min(scale, 1);
+    container.style.transform = `scale(${scale})`;
+    container.style.transformOrigin = 'center center';
+    showNotification('تمت الملاءمة للشاشة');
+}
+
+// ===================== إضافة العناصر الأساسية =====================
 function addShape(type) {
     const canvas = document.getElementById('canvas');
     const el = document.createElement('div');
@@ -413,8 +494,6 @@ function addShape(type) {
     el.style.background = '#6366f1';
     if (type === 'circle') el.style.borderRadius = '50%';
     else if (type === 'rounded') el.style.borderRadius = '20px';
-    else if (type === 'hexagon') el.style.clipPath = 'polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)';
-    else if (type === 'star') el.style.clipPath = 'polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)';
     else if (type === 'triangle') {
         el.style.width = '0'; el.style.height = '0';
         el.style.background = 'transparent';
@@ -423,40 +502,21 @@ function addShape(type) {
         el.style.borderBottom = '100px solid #6366f1';
     }
     el.dataset.type = 'shape';
-    el.dataset.shapeType = type;
     addResizeHandles(el);
     canvas.appendChild(el);
     selectElement(el);
     saveHistory();
-    showNotification('تم إضافة الشكل', 'success');
 }
 
 function addIcon(type) {
-    const icons = { home: 'fa-home', user: 'fa-user', heart: 'fa-heart', star: 'fa-star', mail: 'fa-envelope', phone: 'fa-phone' };
-    const colors = { heart: '#ef4444', star: '#f59e0b' };
+    const icons = { heart: 'fa-heart', star: 'fa-star' };
     const canvas = document.getElementById('canvas');
     const el = document.createElement('div');
     el.className = 'canvas-element';
     el.id = `element-${++elementCounter}`;
-    el.innerHTML = `<i class="fas ${icons[type] || 'fa-star'}" style="font-size:60px;color:${colors[type] || '#6366f1'}"></i>`;
+    el.innerHTML = `<i class="fas ${icons[type]}" style="font-size:60px;color:#6366f1"></i>`;
     el.style.left = '350px'; el.style.top = '250px';
     el.dataset.type = 'icon';
-    addResizeHandles(el);
-    canvas.appendChild(el);
-    selectElement(el);
-    saveHistory();
-    showNotification('تم إضافة الأيقونة', 'success');
-}
-
-function addSticker(emoji) {
-    const canvas = document.getElementById('canvas');
-    const el = document.createElement('div');
-    el.className = 'canvas-element';
-    el.id = `element-${++elementCounter}`;
-    el.innerHTML = emoji;
-    el.style.fontSize = '80px';
-    el.style.left = '360px'; el.style.top = '260px';
-    el.dataset.type = 'sticker';
     addResizeHandles(el);
     canvas.appendChild(el);
     selectElement(el);
@@ -469,173 +529,32 @@ function addText() {
     el.className = 'canvas-element';
     el.id = `element-${++elementCounter}`;
     el.innerHTML = 'اكتب هنا';
-    el.style.cssText = 'font-size:32px;color:#0f172a;font-family:Segoe UI;left:300px;top:280px;padding:10px;min-width:100px;';
-    el.contentEditable = false;
+    el.style.cssText = 'font-size:32px;color:#0f172a;font-family:Segoe UI;left:300px;top:280px;padding:10px;min-width:100px;cursor:text;';
+    el.contentEditable = true;
     el.dataset.type = 'text';
-    attachTextEvents(el);
     addResizeHandles(el);
     canvas.appendChild(el);
     selectElement(el);
     saveHistory();
-    showNotification('انقر مزدوجاً للتحرير', 'info');
 }
 
 function addTextStyle(style) {
-    const styles = {
-        heading: { size: '48px', weight: 'bold', text: 'عنوان رئيسي' },
-        subheading: { size: '32px', weight: '600', text: 'عنوان فرعي' },
-        body: { size: '18px', weight: 'normal', text: 'نص عادي للقراءة' }
-    };
-    const s = styles[style] || styles.body;
+    const styles = { heading: { size: '48px', weight: 'bold', text: 'عنوان رئيسي' }, body: { size: '18px', weight: 'normal', text: 'نص عادي' } };
+    const s = styles[style];
     const canvas = document.getElementById('canvas');
     const el = document.createElement('div');
     el.className = 'canvas-element';
     el.id = `element-${++elementCounter}`;
     el.innerHTML = s.text;
-    el.style.fontSize = s.size;
-    el.style.fontWeight = s.weight;
-    el.style.color = '#0f172a';
-    el.style.fontFamily = 'Segoe UI';
-    el.style.left = '250px'; el.style.top = '280px';
-    el.style.padding = '10px';
-    el.contentEditable = false;
+    el.style.cssText = `font-size:${s.size};font-weight:${s.weight};color:#0f172a;left:250px;top:280px;padding:10px;cursor:text;`;
+    el.contentEditable = true;
     el.dataset.type = 'text';
-    attachTextEvents(el);
     addResizeHandles(el);
     canvas.appendChild(el);
     selectElement(el);
     saveHistory();
 }
 
-function attachTextEvents(el) {
-    el.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        el.contentEditable = true;
-        el.focus();
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
-    });
-    el.addEventListener('blur', () => {
-        el.contentEditable = false;
-        saveHistory();
-    });
-}
-
-function addGradientBlock(gradient) {
-    const canvas = document.getElementById('canvas');
-    const el = document.createElement('div');
-    el.className = 'canvas-element';
-    el.id = `element-${++elementCounter}`;
-    el.style.cssText = `width:300px;height:200px;left:250px;top:200px;background:${gradient};border-radius:12px`;
-    el.dataset.type = 'image';
-    addResizeHandles(el);
-    canvas.appendChild(el);
-    selectElement(el);
-    saveHistory();
-}
-
-function handleImageUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const src = e.target.result;
-        uploadedFiles.push({ name: file.name, src });
-        updateUploadsPanel();
-        placeImage(src);
-        showNotification('تم رفع الصورة', 'success');
-    };
-    reader.readAsDataURL(file);
-    event.target.value = '';
-}
-
-function handleDrop(event) {
-    event.preventDefault();
-    const file = event.dataTransfer.files[0];
-    if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (e) => placeImage(e.target.result);
-    reader.readAsDataURL(file);
-}
-
-function placeImage(src) {
-    const canvas = document.getElementById('canvas');
-    const el = document.createElement('div');
-    el.className = 'canvas-element';
-    el.id = `element-${++elementCounter}`;
-    el.style.cssText = 'width:300px;height:200px;left:250px;top:200px;';
-    el.style.backgroundImage = `url(${src})`;
-    el.style.backgroundSize = 'cover';
-    el.style.backgroundPosition = 'center';
-    el.style.borderRadius = '8px';
-    el.dataset.type = 'image';
-    addResizeHandles(el);
-    canvas.appendChild(el);
-    selectElement(el);
-    saveHistory();
-}
-
-function updateUploadsPanel() {
-    const list = document.getElementById('uploadsList');
-    if (uploadedFiles.length === 0) return;
-    list.innerHTML = uploadedFiles.map((f, i) => `
-        <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-dark);border-radius:8px;cursor:pointer"
-            onclick="placeImage('${f.src}')">
-            <img src="${f.src}" style="width:50px;height:50px;object-fit:cover;border-radius:6px">
-            <span style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span>
-        </div>
-    `).join('');
-}
-
-// ===================== الخلفية =====================
-function setBackground(value) {
-    const canvas = document.getElementById('canvas');
-    if (value.includes('gradient')) {
-        canvas.style.background = value;
-    } else {
-        canvas.style.background = value;
-    }
-    saveHistory();
-    showNotification('تم تغيير الخلفية', 'success');
-}
-
-// ===================== القوالب =====================
-function loadTemplate(type) {
-    const canvas = document.getElementById('canvas');
-    const templates = {
-        social: { w: 800, h: 800, bg: 'linear-gradient(135deg,#667eea,#764ba2)', text: 'منشور وسائل التواصل', textColor: '#fff' },
-        poster: { w: 600, h: 900, bg: 'linear-gradient(135deg,#f093fb,#f5576c)', text: 'بوستر إعلاني', textColor: '#fff' },
-        card: { w: 900, h: 500, bg: 'linear-gradient(135deg,#4facfe,#00f2fe)', text: 'بطاقة أعمال', textColor: '#fff' },
-        banner: { w: 800, h: 250, bg: 'linear-gradient(135deg,#43e97b,#38f9d7)', text: 'بانر ويب', textColor: '#0f172a' },
-        story: { w: 450, h: 800, bg: 'linear-gradient(135deg,#fa709a,#fee140)', text: 'Story', textColor: '#fff' }
-    };
-    const t = templates[type];
-    if (!t) return;
-    // مسح الكانفاس
-    canvas.querySelectorAll('.canvas-element').forEach(e => e.remove());
-    canvas.style.width = t.w + 'px';
-    canvas.style.height = t.h + 'px';
-    canvas.style.background = t.bg;
-    // إضافة نص افتراضي
-    const el = document.createElement('div');
-    el.className = 'canvas-element';
-    el.id = `element-${++elementCounter}`;
-    el.innerHTML = t.text;
-    el.style.cssText = `font-size:36px;font-weight:bold;color:${t.textColor};font-family:Segoe UI;left:50%;top:50%;transform:translate(-50%,-50%);padding:10px;white-space:nowrap;`;
-    el.contentEditable = false;
-    el.dataset.type = 'text';
-    attachTextEvents(el);
-    addResizeHandles(el);
-    canvas.appendChild(el);
-    selectElement(null);
-    saveHistory();
-    showNotification('تم تحميل القالب: ' + t.text, 'success');
-}
-
-// ===================== مقابض التحجيم والسحب =====================
 function addResizeHandles(element) {
     const handles = document.createElement('div');
     handles.className = 'resize-handles';
@@ -650,15 +569,13 @@ function addResizeHandles(element) {
         if (e.target.classList.contains('handle')) return;
         startDrag(e, element);
     });
-    element.addEventListener('click', (e) => {
-        if (!isDragging) { e.stopPropagation(); selectElement(element); }
-    });
+    element.addEventListener('click', (e) => { e.stopPropagation(); selectElement(element); });
 }
 
 function startDrag(e, element) {
     if (element.contentEditable === 'true') return;
     e.preventDefault();
-    isDragging = false;
+    let isDraggingNow = false;
     const startMouseX = e.clientX;
     const startMouseY = e.clientY;
     const startElemLeft = parseInt(element.style.left) || 0;
@@ -667,7 +584,7 @@ function startDrag(e, element) {
     function onMove(e) {
         const dx = e.clientX - startMouseX;
         const dy = e.clientY - startMouseY;
-        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) isDragging = true;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) isDraggingNow = true;
         element.style.left = (startElemLeft + dx) + 'px';
         element.style.top = (startElemTop + dy) + 'px';
         element.classList.add('dragging');
@@ -677,8 +594,7 @@ function startDrag(e, element) {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
         element.classList.remove('dragging');
-        if (isDragging) saveHistory();
-        setTimeout(() => { isDragging = false; }, 50);
+        if (isDraggingNow) saveHistory();
     }
 
     document.addEventListener('mousemove', onMove);
@@ -687,11 +603,8 @@ function startDrag(e, element) {
 
 function startResize(e, element, pos) {
     e.preventDefault();
-    isResizing = true;
     const startMouseX = e.clientX;
     const startMouseY = e.clientY;
-    const rect = element.getBoundingClientRect();
-    const canvasRect = document.getElementById('canvas').getBoundingClientRect();
     const startW = element.offsetWidth;
     const startH = element.offsetHeight;
     const startL = parseInt(element.style.left) || 0;
@@ -714,7 +627,6 @@ function startResize(e, element, pos) {
     function onUp() {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
-        isResizing = false;
         saveHistory();
         updatePropertiesPanel();
     }
@@ -723,7 +635,6 @@ function startResize(e, element, pos) {
     document.addEventListener('mouseup', onUp);
 }
 
-// ===================== اختيار العناصر =====================
 function selectElement(element) {
     document.querySelectorAll('.canvas-element').forEach(el => el.classList.remove('selected'));
     if (element) {
@@ -732,199 +643,39 @@ function selectElement(element) {
         updatePropertiesPanel();
     } else {
         selectedElement = null;
-        document.getElementById('propertiesContent').innerHTML = `
-            <div style="text-align:center;color:var(--text-secondary);padding:40px">
-                <i class="fas fa-mouse-pointer" style="font-size:48px;margin-bottom:15px;opacity:0.3;display:block"></i>
-                <div>اختر عنصراً للتعديل</div>
-                <div style="font-size:12px;margin-top:10px;opacity:0.7">اضغط على أي عنصر في مساحة العمل</div>
-            </div>`;
+        document.getElementById('propertiesContent').innerHTML = `<div style="text-align:center;color:var(--text-secondary);padding:40px"><i class="fas fa-mouse-pointer" style="font-size:48px"></i><div>اختر عنصراً للتعديل</div></div>`;
     }
 }
 
-function handleWorkspaceClick(e) {
-    if (e.target === document.getElementById('workspace') || e.target === document.getElementById('canvas') || e.target.classList.contains('canvas-container')) {
-        selectElement(null);
-    }
-}
-
-// ===================== لوحة الخصائص =====================
 function updatePropertiesPanel() {
     if (!selectedElement) return;
-    const type = selectedElement.dataset.type;
     const cs = window.getComputedStyle(selectedElement);
-
     let html = `
         <div class="property-group">
-            <div class="section-title"><i class="fas fa-ruler-combined"></i> الحجم والموقع</div>
+            <div class="section-title">📐 الحجم والموقع</div>
             <div class="property-row">
-                <div class="property-col">
-                    <label class="property-label">العرض (px)</label>
-                    <input type="number" class="property-input" value="${selectedElement.offsetWidth}" onchange="updateSize('width',this.value)">
-                </div>
-                <div class="property-col">
-                    <label class="property-label">الطول (px)</label>
-                    <input type="number" class="property-input" value="${selectedElement.offsetHeight}" onchange="updateSize('height',this.value)">
-                </div>
+                <div class="property-col"><label class="property-label">العرض</label><input type="number" class="property-input" value="${selectedElement.offsetWidth}" onchange="selectedElement.style.width=this.value+'px';saveHistory()"></div>
+                <div class="property-col"><label class="property-label">الارتفاع</label><input type="number" class="property-input" value="${selectedElement.offsetHeight}" onchange="selectedElement.style.height=this.value+'px';saveHistory()"></div>
             </div>
             <div class="property-row">
-                <div class="property-col">
-                    <label class="property-label">موقع X</label>
-                    <input type="number" class="property-input" value="${parseInt(selectedElement.style.left)||0}" onchange="selectedElement.style.left=this.value+'px';saveHistory()">
-                </div>
-                <div class="property-col">
-                    <label class="property-label">موقع Y</label>
-                    <input type="number" class="property-input" value="${parseInt(selectedElement.style.top)||0}" onchange="selectedElement.style.top=this.value+'px';saveHistory()">
-                </div>
+                <div class="property-col"><label class="property-label">X</label><input type="number" class="property-input" value="${parseInt(selectedElement.style.left)||0}" onchange="selectedElement.style.left=this.value+'px';saveHistory()"></div>
+                <div class="property-col"><label class="property-label">Y</label><input type="number" class="property-input" value="${parseInt(selectedElement.style.top)||0}" onchange="selectedElement.style.top=this.value+'px';saveHistory()"></div>
             </div>
-            <div>
-                <label class="property-label">الدوران: <span id="rotVal">${getRotation(selectedElement)}</span>°</label>
-                <input type="range" min="0" max="360" value="${getRotation(selectedElement)}" oninput="document.getElementById('rotVal').textContent=this.value;setRotation(selectedElement,this.value)">
-            </div>
+            <label class="property-label">الشفافية: ${Math.round((parseFloat(cs.opacity)||1)*100)}%</label>
+            <input type="range" min="0" max="100" value="${Math.round((parseFloat(cs.opacity)||1)*100)}" oninput="selectedElement.style.opacity=this.value/100">
         </div>
         <div class="property-group">
-            <div class="section-title"><i class="fas fa-eye"></i> الشفافية</div>
-            <label class="property-label">الشفافية: <span id="opacityVal">${Math.round((parseFloat(cs.opacity)||1)*100)}</span>%</label>
-            <input type="range" min="0" max="100" value="${Math.round((parseFloat(cs.opacity)||1)*100)}"
-                oninput="document.getElementById('opacityVal').textContent=this.value;selectedElement.style.opacity=this.value/100">
-        </div>`;
-
-    if (type === 'shape' || type === 'image') {
-        html += `
+            <div class="section-title">🎨 اللون</div>
+            <input type="color" value="#6366f1" onchange="selectedElement.style.background=this.value;saveHistory()">
+        </div>
         <div class="property-group">
-            <div class="section-title"><i class="fas fa-fill-drip"></i> اللون</div>
-            <input type="color" value="${rgbToHex(cs.backgroundColor)||'#6366f1'}" onchange="updateColor(this.value)">
-            <div class="color-presets" style="margin-top:12px">
-                ${['#6366f1','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#0f172a','#ffffff'].map(c =>
-                    `<div class="color-preset" style="background:${c}" onclick="updateColor('${c}')"></div>`
-                ).join('')}
-            </div>
-            <div style="margin-top:12px">
-                <label class="property-label">حواف مستديرة (px)</label>
-                <input type="range" min="0" max="100" value="${parseInt(cs.borderRadius)||0}"
-                    oninput="selectedElement.style.borderRadius=this.value+'px'">
-            </div>
-        </div>`;
-    }
-
-    if (type === 'text') {
-        html += `
-        <div class="property-group">
-            <div class="section-title"><i class="fas fa-font"></i> خصائص النص</div>
-            <label class="property-label">حجم الخط</label>
-            <input type="number" class="property-input" value="${parseInt(cs.fontSize)||32}" onchange="selectedElement.style.fontSize=this.value+'px';saveHistory()">
-            <label class="property-label" style="margin-top:12px">لون النص</label>
-            <input type="color" value="${rgbToHex(cs.color)||'#0f172a'}" onchange="selectedElement.style.color=this.value;saveHistory()">
-            <label class="property-label" style="margin-top:12px">خلفية النص</label>
-            <input type="color" value="${rgbToHex(cs.backgroundColor)||'#ffffff'}" onchange="selectedElement.style.background=this.value">
-            <div style="margin-top:12px">
-                <label class="property-label">التنسيق</label>
-                <div class="text-effects">
-                    <button class="effect-btn ${cs.fontWeight==='bold'||parseInt(cs.fontWeight)>=700?'active':''}" onclick="toggleBold()"><b>B</b></button>
-                    <button class="effect-btn ${cs.fontStyle==='italic'?'active':''}" onclick="toggleItalic()"><i>I</i></button>
-                    <button class="effect-btn ${cs.textDecoration.includes('underline')?'active':''}" onclick="toggleUnderline()"><u>U</u></button>
-                    <button class="effect-btn" onclick="setTextAlign('left')"><i class="fas fa-align-left"></i></button>
-                    <button class="effect-btn" onclick="setTextAlign('center')"><i class="fas fa-align-center"></i></button>
-                    <button class="effect-btn" onclick="setTextAlign('right')"><i class="fas fa-align-right"></i></button>
-                </div>
-            </div>
-        </div>`;
-    }
-
-    html += `
-        <div class="property-group">
-            <div class="section-title"><i class="fas fa-layer-group"></i> الطبقات والإجراءات</div>
+            <div class="section-title">🔧 الإجراءات</div>
             <div class="layer-controls">
-                <button class="layer-btn" onclick="bringForward()"><i class="fas fa-arrow-up"></i> للأمام</button>
-                <button class="layer-btn" onclick="sendBackward()"><i class="fas fa-arrow-down"></i> للخلف</button>
-            </div>
-            <div class="layer-controls" style="margin-top:8px">
+                <button class="layer-btn" onclick="deleteElement()" style="background:#ef4444;color:white"><i class="fas fa-trash"></i> حذف</button>
                 <button class="layer-btn" onclick="duplicateElement()"><i class="fas fa-copy"></i> نسخ</button>
-                <button class="layer-btn" onclick="deleteElement()" style="color:#ef4444;border-color:#ef4444"><i class="fas fa-trash"></i> حذف</button>
             </div>
         </div>`;
-
     document.getElementById('propertiesContent').innerHTML = html;
-}
-
-// ===================== دوال الخصائص =====================
-function updateSize(dim, val) {
-    if (!selectedElement) return;
-    selectedElement.style[dim] = val + 'px';
-    saveHistory();
-}
-
-function updateColor(color) {
-    if (!selectedElement) return;
-    const type = selectedElement.dataset.type;
-    if (type === 'shape' && selectedElement.dataset.shapeType === 'triangle') {
-        selectedElement.style.borderBottomColor = color;
-    } else {
-        selectedElement.style.background = color;
-    }
-    saveHistory();
-}
-
-function getRotation(el) {
-    const transform = el.style.transform;
-    if (!transform || !transform.includes('rotate')) return 0;
-    const match = transform.match(/rotate\(([^)]+)deg\)/);
-    return match ? parseInt(match[1]) : 0;
-}
-
-function setRotation(el, deg) {
-    const current = el.style.transform.replace(/rotate\([^)]*\)/g, '').trim();
-    el.style.transform = `${current} rotate(${deg}deg)`.trim();
-}
-
-function toggleBold() {
-    if (!selectedElement) return;
-    const cs = window.getComputedStyle(selectedElement);
-    selectedElement.style.fontWeight = (parseInt(cs.fontWeight) >= 700) ? 'normal' : 'bold';
-    saveHistory();
-    updatePropertiesPanel();
-}
-
-function toggleItalic() {
-    if (!selectedElement) return;
-    const cs = window.getComputedStyle(selectedElement);
-    selectedElement.style.fontStyle = cs.fontStyle === 'italic' ? 'normal' : 'italic';
-    saveHistory();
-    updatePropertiesPanel();
-}
-
-function toggleUnderline() {
-    if (!selectedElement) return;
-    const cs = window.getComputedStyle(selectedElement);
-    selectedElement.style.textDecoration = cs.textDecoration.includes('underline') ? 'none' : 'underline';
-    saveHistory();
-    updatePropertiesPanel();
-}
-
-function changeFont(font) {
-    if (selectedElement) {
-        selectedElement.style.fontFamily = font;
-        document.getElementById('fontPreview').style.fontFamily = font;
-        saveHistory();
-    }
-}
-
-function setTextAlign(align) {
-    if (selectedElement) {
-        selectedElement.style.textAlign = align;
-        saveHistory();
-    }
-}
-
-function bringForward() {
-    if (!selectedElement) return;
-    const current = parseInt(selectedElement.style.zIndex) || 0;
-    selectedElement.style.zIndex = current + 1;
-}
-
-function sendBackward() {
-    if (!selectedElement) return;
-    const current = parseInt(selectedElement.style.zIndex) || 0;
-    selectedElement.style.zIndex = Math.max(0, current - 1);
 }
 
 function duplicateElement() {
@@ -933,186 +684,165 @@ function duplicateElement() {
     clone.id = `element-${++elementCounter}`;
     clone.style.left = (parseInt(selectedElement.style.left) + 20) + 'px';
     clone.style.top = (parseInt(selectedElement.style.top) + 20) + 'px';
-    clone.classList.remove('selected');
-    // re-attach drag/resize events
-    addDragToExistingElement(clone);
+    addResizeHandles(clone);
     document.getElementById('canvas').appendChild(clone);
     selectElement(clone);
     saveHistory();
-    showNotification('تم نسخ العنصر', 'success');
-}
-
-function addDragToExistingElement(el) {
-    // handles already cloned, re-attach events
-    el.querySelectorAll('.handle').forEach(h => {
-        const pos = Array.from(h.classList).find(c => ['nw','ne','sw','se','n','s','e','w'].includes(c));
-        h.addEventListener('mousedown', (e) => { e.stopPropagation(); startResize(e, el, pos); });
-    });
-    el.addEventListener('mousedown', (e) => {
-        if (e.target.classList.contains('handle')) return;
-        startDrag(e, el);
-    });
-    el.addEventListener('click', (e) => {
-        if (!isDragging) { e.stopPropagation(); selectElement(el); }
-    });
-    if (el.dataset.type === 'text') attachTextEvents(el);
+    showNotification('تم نسخ العنصر');
 }
 
 function deleteElement() {
     if (!selectedElement) return;
     selectedElement.remove();
     selectedElement = null;
-    document.getElementById('propertiesContent').innerHTML = `
-        <div style="text-align:center;color:var(--text-secondary);padding:40px">
-            <i class="fas fa-mouse-pointer" style="font-size:48px;margin-bottom:15px;opacity:0.3;display:block"></i>
-            <div>اختر عنصراً للتعديل</div>
-        </div>`;
+    updatePropertiesPanel();
     saveHistory();
-    showNotification('تم حذف العنصر', 'error');
 }
 
-// ===================== أدوات مساعدة =====================
-function rgbToHex(rgb) {
-    if (!rgb || rgb === 'transparent' || rgb === 'rgba(0, 0, 0, 0)') return '#ffffff';
-    if (rgb.startsWith('#')) return rgb;
-    const match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-    if (!match) return '#ffffff';
-    return '#' + match.slice(1).map(n => parseInt(n).toString(16).padStart(2, '0')).join('');
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const canvas = document.getElementById('canvas');
+            const el = document.createElement('div');
+            el.className = 'canvas-element';
+            el.id = `element-${++elementCounter}`;
+            el.style.cssText = 'width:300px;height:200px;left:250px;top:200px;background-size:cover;background-position:center;border-radius:8px';
+            el.style.backgroundImage = `url(${e.target.result})`;
+            el.dataset.type = 'image';
+            addResizeHandles(el);
+            canvas.appendChild(el);
+            selectElement(el);
+            saveHistory();
+            showNotification('تم رفع الصورة');
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function loadTemplate(type) {
+    const canvas = document.getElementById('canvas');
+    canvas.querySelectorAll('.canvas-element').forEach(e => e.remove());
+    if (type === 'social') setCanvasSize(1080, 1080);
+    else if (type === 'poster') setCanvasSize(800, 1200);
+    else setCanvasSize(900, 500);
+    canvas.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
+    const text = document.createElement('div');
+    text.className = 'canvas-element';
+    text.id = `element-${++elementCounter}`;
+    text.innerHTML = type === 'social' ? 'منشور رائع!' : (type === 'poster' ? 'بوستر إعلاني' : 'بطاقة أعمال');
+    text.style.cssText = 'font-size:48px;font-weight:bold;color:white;left:50%;top:50%;transform:translate(-50%,-50%);white-space:nowrap;';
+    text.contentEditable = true;
+    addResizeHandles(text);
+    canvas.appendChild(text);
+    selectElement(text);
+    saveHistory();
+    showNotification('تم تحميل القالب');
+}
+
+function setBackground(value) {
+    document.getElementById('canvas').style.background = value;
+    saveHistory();
+}
+
+function toggleGrid() {
+    document.getElementById('gridOverlay').classList.toggle('visible');
+}
+
+function changeFont(font) {
+    if (selectedElement) selectedElement.style.fontFamily = font;
 }
 
 function showNotification(msg, type = 'info') {
-    const existing = document.querySelectorAll('.notification');
-    existing.forEach(n => n.remove());
     const n = document.createElement('div');
-    n.className = `notification ${type}`;
-    const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
-    n.innerHTML = `<i class="fas ${icons[type]||'fa-info-circle'}"></i> ${msg}`;
+    n.className = 'notification';
+    n.innerHTML = msg;
     document.body.appendChild(n);
-    setTimeout(() => n.remove(), 3000);
+    setTimeout(() => n.remove(), 2000);
 }
 
-// ===================== تاريخ التراجع/الإعادة =====================
 function saveHistory() {
     const canvas = document.getElementById('canvas');
-    const state = { html: canvas.innerHTML, bg: canvas.style.background, w: canvas.style.width, h: canvas.style.height };
     historyStep++;
     history = history.slice(0, historyStep);
-    history.push(JSON.stringify(state));
-    if (history.length > 50) { history.shift(); historyStep--; }
+    history.push(canvas.innerHTML);
+    if (history.length > 50) history.shift();
 }
 
 function undo() {
-    if (historyStep <= 0) { showNotification('لا يوجد تراجع', 'info'); return; }
+    if (historyStep <= 0) return;
     historyStep--;
-    restoreState(JSON.parse(history[historyStep]));
+    document.getElementById('canvas').innerHTML = history[historyStep];
+    reattachEvents();
 }
 
 function redo() {
-    if (historyStep >= history.length - 1) { showNotification('لا يوجد إعادة', 'info'); return; }
+    if (historyStep >= history.length - 1) return;
     historyStep++;
-    restoreState(JSON.parse(history[historyStep]));
+    document.getElementById('canvas').innerHTML = history[historyStep];
+    reattachEvents();
 }
 
-function restoreState(state) {
-    const canvas = document.getElementById('canvas');
-    canvas.innerHTML = state.html;
-    canvas.style.background = state.bg;
-    if (state.w) canvas.style.width = state.w;
-    if (state.h) canvas.style.height = state.h;
-    // Re-attach events to all elements
-    canvas.querySelectorAll('.canvas-element').forEach(el => {
-        addDragToExistingElement(el);
-    });
+function reattachEvents() {
+    document.querySelectorAll('.canvas-element').forEach(el => addResizeHandles(el));
     selectElement(null);
 }
 
-// ===================== الشبكة =====================
-function toggleGrid() {
-    gridVisible = !gridVisible;
-    document.getElementById('gridOverlay').classList.toggle('visible', gridVisible);
-}
-
-// ===================== حفظ/تحميل =====================
 function saveProject() {
     const canvas = document.getElementById('canvas');
-    const data = {
-        name: document.getElementById('projectName').value,
-        html: canvas.innerHTML,
-        bg: canvas.style.background,
-        w: canvas.style.width,
-        h: canvas.style.height
-    };
+    const data = { html: canvas.innerHTML, bg: canvas.style.background, name: document.getElementById('projectName').value };
     localStorage.setItem('bildflow_project', JSON.stringify(data));
-    showNotification('تم حفظ المشروع', 'success');
+    showNotification('تم حفظ المشروع');
 }
 
 function loadLastProject() {
     const saved = localStorage.getItem('bildflow_project');
-    if (!saved) { showNotification('لا يوجد مشروع محفوظ', 'info'); return; }
-    const data = JSON.parse(saved);
-    const canvas = document.getElementById('canvas');
-    document.getElementById('projectName').value = data.name || '';
-    canvas.innerHTML = data.html || '';
-    canvas.style.background = data.bg || 'white';
-    if (data.w) canvas.style.width = data.w;
-    if (data.h) canvas.style.height = data.h;
-    canvas.querySelectorAll('.canvas-element').forEach(el => addDragToExistingElement(el));
-    selectElement(null);
-    showNotification('تم تحميل المشروع', 'success');
+    if (saved) {
+        const data = JSON.parse(saved);
+        document.getElementById('canvas').innerHTML = data.html;
+        document.getElementById('canvas').style.background = data.bg;
+        document.getElementById('projectName').value = data.name;
+        reattachEvents();
+        showNotification('تم تحميل المشروع');
+    }
 }
 
-// ===================== التصدير =====================
 function exportDesign() {
     const canvas = document.getElementById('canvas');
     const overlay = document.getElementById('loadingOverlay');
     overlay.classList.add('active');
-    // إخفاء مقابض التحجيم مؤقتاً
     const handles = canvas.querySelectorAll('.resize-handles');
     handles.forEach(h => h.style.display = 'none');
-    const selected = canvas.querySelector('.selected');
-    if (selected) selected.classList.remove('selected');
-
-    html2canvas(canvas, { useCORS: true, allowTaint: true, scale: 2 }).then(canvasEl => {
+    html2canvas(canvas, { scale: 2 }).then(canvasImg => {
         const link = document.createElement('a');
-        link.download = (document.getElementById('projectName').value || 'design') + '.png';
-        link.href = canvasEl.toDataURL('image/png');
+        link.download = 'design.png';
+        link.href = canvasImg.toDataURL();
         link.click();
-        // استعادة المقابض
         handles.forEach(h => h.style.display = '');
-        if (selected) selected.classList.add('selected');
         overlay.classList.remove('active');
-        showNotification('تم التصدير بنجاح!', 'success');
-    }).catch(() => {
-        overlay.classList.remove('active');
-        showNotification('حدث خطأ في التصدير', 'error');
-    });
+        showNotification('تم التصدير!');
+    }).catch(() => { overlay.classList.remove('active'); showNotification('خطأ في التصدير', 'error'); });
 }
 
-// ===================== اختصارات لوحة المفاتيح =====================
+function switchTool(tool) {
+    document.querySelectorAll('.tool-item').forEach(i => i.classList.remove('active'));
+    document.querySelector(`[data-tool="${tool}"]`).classList.add('active');
+    document.querySelectorAll('.panel-section').forEach(p => p.classList.add('hidden'));
+    document.getElementById(`panel-${tool}`).classList.remove('hidden');
+}
+
+// اختصارات لوحة المفاتيح
 document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey || e.metaKey) {
-        if (e.key === 'z') { e.preventDefault(); undo(); }
-        else if (e.key === 'y') { e.preventDefault(); redo(); }
-        else if (e.key === 's') { e.preventDefault(); saveProject(); }
-        else if (e.key === 'g') { e.preventDefault(); toggleGrid(); }
-        else if (e.key === 'd') { e.preventDefault(); duplicateElement(); }
-    }
-    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedElement && selectedElement.contentEditable !== 'true') {
-        deleteElement();
-    }
-    // تحريك العنصر بالأسهم
-    if (selectedElement && selectedElement.contentEditable !== 'true') {
-        const step = e.shiftKey ? 10 : 1;
-        if (e.key === 'ArrowLeft') { selectedElement.style.left = (parseInt(selectedElement.style.left)||0) - step + 'px'; e.preventDefault(); }
-        if (e.key === 'ArrowRight') { selectedElement.style.left = (parseInt(selectedElement.style.left)||0) + step + 'px'; e.preventDefault(); }
-        if (e.key === 'ArrowUp') { selectedElement.style.top = (parseInt(selectedElement.style.top)||0) - step + 'px'; e.preventDefault(); }
-        if (e.key === 'ArrowDown') { selectedElement.style.top = (parseInt(selectedElement.style.top)||0) + step + 'px'; e.preventDefault(); }
-    }
+    if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
+    if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo(); }
+    if (e.key === 'Delete' && selectedElement) deleteElement();
 });
 
-// ===================== تهيئة =====================
+// التهيئة
+initResizablePanels();
 saveHistory();
-showNotification('مرحباً بك في BildFlow Pro!', 'info');
+showNotification('مرحباً! يمكنك سحب الألواح الجانبية لتوسيع مساحة العمل 🎨');
 </script>
 </body>
 </html>
