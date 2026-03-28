@@ -1,43 +1,862 @@
-// تحديث خصائص النص (استكمال)
-function updateTextColor(color) {
-    if (!selectedElement) return;
-    selectedElement.style.color = color;
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BildFlow Pro - منشئ التصاميم الاحترافي</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1; --primary-dark: #4f46e5;
+            --bg-dark: #0f172a; --bg-panel: #1e293b; --bg-canvas: #f1f5f9;
+            --text-primary: #f8fafc; --text-secondary: #94a3b8;
+            --border: #334155; --shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+            --success: #10b981; --error: #ef4444; --warning: #f59e0b;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-dark); color: var(--text-primary); overflow: hidden; height: 100vh; }
+        .top-bar { height: 60px; background: var(--bg-panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: relative; z-index: 100; }
+        .logo { font-size: 24px; font-weight: bold; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; gap: 10px; }
+        .top-actions { display: flex; gap: 12px; align-items: center; }
+        .btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.3s; display: flex; align-items: center; gap: 6px; font-family: inherit; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.4); }
+        .btn-secondary { background: var(--bg-dark); color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: var(--border); color: var(--text-primary); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #059669; }
+        .main-container { display: flex; height: calc(100vh - 60px); }
+        .tools-sidebar { width: 80px; background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 8px; }
+        .tool-item { width: 60px; height: 60px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; color: var(--text-secondary); }
+        .tool-item:hover, .tool-item.active { background: var(--primary); color: white; transform: scale(1.05); }
+        .tool-item i { font-size: 24px; margin-bottom: 4px; }
+        .tool-item span { font-size: 11px; }
+        .tools-panel { width: 300px; background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+        .panel-header { padding: 20px; border-bottom: 1px solid var(--border); font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .panel-content { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .section-title { font-size: 12px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .elements-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .element-item { aspect-ratio: 1; background: var(--bg-dark); border: 2px solid var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; font-size: 28px; position: relative; overflow: hidden; }
+        .element-item:hover { border-color: var(--primary); transform: scale(1.05) translateY(-2px); background: var(--bg-panel); box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+        .workspace { flex: 1; background: var(--bg-canvas); position: relative; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 40px; }
+        .canvas-container { position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
+        .canvas { width: 800px; height: 600px; background: white; position: relative; overflow: hidden; }
+        .canvas-element { position: absolute; cursor: move; user-select: none; transition: box-shadow 0.2s; }
+        .canvas-element.selected { outline: 2px solid var(--primary); outline-offset: 2px; box-shadow: 0 0 0 4px rgba(99,102,241,0.2); z-index: 1000; }
+        .canvas-element:hover { box-shadow: 0 0 0 2px rgba(99,102,241,0.3); }
+        .canvas-element.dragging { opacity: 0.8; cursor: grabbing; }
+        .resize-handles { position: absolute; width: 100%; height: 100%; pointer-events: none; display: none; }
+        .canvas-element.selected .resize-handles { display: block; }
+        .handle { position: absolute; width: 12px; height: 12px; background: white; border: 2px solid var(--primary); border-radius: 50%; pointer-events: all; cursor: pointer; transition: transform 0.2s, background 0.2s; }
+        .handle:hover { transform: scale(1.3); background: var(--primary); }
+        .handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
+        .handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
+        .handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
+        .handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
+        .handle.n { top: -6px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+        .handle.s { bottom: -6px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+        .handle.w { left: -6px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
+        .handle.e { right: -6px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
+        .properties-panel { width: 280px; background: var(--bg-panel); border-right: 1px solid var(--border); overflow-y: auto; }
+        .property-group { padding: 20px; border-bottom: 1px solid var(--border); }
+        .property-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; display: block; }
+        .property-input { width: 100%; padding: 8px 12px; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 14px; transition: border-color 0.3s; }
+        .property-input:focus { outline: none; border-color: var(--primary); }
+        .property-row { display: flex; gap: 10px; margin-bottom: 12px; }
+        .property-col { flex: 1; }
+        input[type="color"] { width: 100%; height: 40px; border: none; border-radius: 6px; cursor: pointer; }
+        input[type="range"] { width: 100%; margin-top: 5px; accent-color: var(--primary); }
+        .color-presets { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .color-preset { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s; }
+        .color-preset:hover { transform: scale(1.2); border-color: white; box-shadow: 0 0 0 2px var(--primary); }
+        .text-effects { display: flex; gap: 8px; flex-wrap: wrap; }
+        .effect-btn { padding: 6px 12px; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); cursor: pointer; font-size: 12px; transition: all 0.3s; }
+        .effect-btn:hover, .effect-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .hidden { display: none !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .tool-category { margin-bottom: 24px; }
+        .category-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 12px; background: var(--bg-dark); border-radius: 8px; margin-bottom: 12px; transition: background 0.3s; }
+        .category-header:hover { background: var(--border); }
+        .category-content { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .layer-btn { flex: 1; padding: 8px; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); cursor: pointer; font-size: 12px; transition: all 0.3s; }
+        .layer-btn:hover { background: var(--primary); color: white; }
+        .font-preview { padding: 10px; background: var(--bg-dark); border-radius: 6px; margin-top: 8px; font-size: 18px; text-align: center; border: 1px solid var(--border); }
+        .grid-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: linear-gradient(rgba(99,102,241,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.1) 1px, transparent 1px); background-size: 20px 20px; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+        .grid-overlay.visible { opacity: 1; }
+        .style-presets { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; }
+        .style-preset { min-width: 80px; height: 80px; background: var(--bg-dark); border: 2px solid var(--border); border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; font-size: 14px; flex-direction: column; gap: 5px; }
+        .style-preset:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 10px; }
+        .notification { position: fixed; bottom: 20px; right: 20px; padding: 14px 24px; border-radius: 8px; z-index: 10000; animation: slideIn 0.3s ease; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; min-width: 250px; }
+        .notification.success { background: var(--success); color: white; }
+        .notification.error { background: var(--error); color: white; }
+        .notification.info { background: var(--primary); color: white; }
+        .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; }
+        .loading-overlay.active { display: flex; }
+        .loading-spinner { width: 60px; height: 60px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        .loading-text { margin-top: 20px; color: var(--text-primary); font-size: 16px; }
+        .template-grid { display: grid; gap: 12px; }
+        .template-item { padding: 24px; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden; font-weight: 600; color: white; }
+        .template-item:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .canvas-element[contenteditable="true"] { cursor: text; outline: none; }
+        .canvas-element[contenteditable="true"]:focus { outline: 2px solid var(--primary); }
+        .layer-controls { display: flex; gap: 8px; margin-top: 16px; }
+        select.property-input { -webkit-appearance: none; appearance: none; }
+    </style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">جاري معالجة التصميم...</div>
+</div>
+
+<div class="top-bar">
+    <div class="logo">
+        <i class="fas fa-layer-group"></i>
+        <span>BildFlow Pro</span>
+    </div>
+    <div style="flex: 1; text-align: center;">
+        <input type="text" value="مشروع تصميم جديد" id="projectName"
+            style="background: transparent; border: none; color: var(--text-primary); font-size: 16px; text-align: center; outline: none; padding: 8px; border-radius: 6px; transition: background 0.3s;"
+            onfocus="this.style.background='var(--bg-dark)'"
+            onblur="this.style.background='transparent'">
+    </div>
+    <div class="top-actions">
+        <button class="btn btn-secondary" onclick="undo()" title="تراجع (Ctrl+Z)"><i class="fas fa-undo"></i> تراجع</button>
+        <button class="btn btn-secondary" onclick="redo()" title="إعادة (Ctrl+Y)"><i class="fas fa-redo"></i> إعادة</button>
+        <button class="btn btn-secondary" onclick="toggleGrid()" title="شبكة"><i class="fas fa-border-all"></i> شبكة</button>
+        <button class="btn btn-secondary" onclick="saveProject()" title="حفظ (Ctrl+S)"><i class="fas fa-save"></i> حفظ</button>
+        <button class="btn btn-secondary" onclick="loadLastProject()" title="استعادة"><i class="fas fa-folder-open"></i> استعادة</button>
+        <button class="btn btn-primary" onclick="exportDesign()"><i class="fas fa-download"></i> تصدير PNG</button>
+    </div>
+</div>
+
+<div class="main-container">
+    <!-- شريط الأدوات الجانبي -->
+    <div class="tools-sidebar">
+        <div class="tool-item active" onclick="switchTool('elements')" data-tool="elements"><i class="fas fa-shapes"></i><span>عناصر</span></div>
+        <div class="tool-item" onclick="switchTool('text')" data-tool="text"><i class="fas fa-font"></i><span>نص</span></div>
+        <div class="tool-item" onclick="switchTool('images')" data-tool="images"><i class="fas fa-image"></i><span>صور</span></div>
+        <div class="tool-item" onclick="switchTool('uploads')" data-tool="uploads"><i class="fas fa-cloud-upload-alt"></i><span>رفع</span></div>
+        <div class="tool-item" onclick="switchTool('backgrounds')" data-tool="backgrounds"><i class="fas fa-palette"></i><span>خلفية</span></div>
+        <div class="tool-item" onclick="switchTool('templates')" data-tool="templates"><i class="fas fa-th-large"></i><span>قوالب</span></div>
+    </div>
+
+    <!-- لوحة الأدوات -->
+    <div class="tools-panel" id="toolsPanel">
+
+        <!-- عناصر -->
+        <div id="panel-elements" class="panel-section">
+            <div class="panel-header"><i class="fas fa-shapes"></i> العناصر</div>
+            <div class="panel-content">
+                <div class="tool-category">
+                    <div class="category-header" onclick="toggleCategory(this)">
+                        <span><i class="fas fa-square"></i> الأشكال الأساسية</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="category-content">
+                        <div class="element-item" onclick="addShape('rect')" title="مربع"><i class="fas fa-square" style="color:#6366f1"></i></div>
+                        <div class="element-item" onclick="addShape('circle')" title="دائرة"><i class="fas fa-circle" style="color:#6366f1"></i></div>
+                        <div class="element-item" onclick="addShape('rounded')" title="زوايا دائرية"><i class="fas fa-square" style="color:#6366f1;border-radius:30%"></i></div>
+                        <div class="element-item" onclick="addShape('triangle')" title="مثلث"><i class="fas fa-play" style="color:#6366f1;transform:rotate(-90deg)"></i></div>
+                        <div class="element-item" onclick="addShape('hexagon')" title="سداسي"><i class="fas fa-stop" style="color:#6366f1"></i></div>
+                        <div class="element-item" onclick="addShape('star')" title="نجمة"><i class="fas fa-star" style="color:#6366f1"></i></div>
+                    </div>
+                </div>
+                <div class="tool-category">
+                    <div class="category-header" onclick="toggleCategory(this)">
+                        <span><i class="fas fa-icons"></i> الأيقونات</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="category-content">
+                        <div class="element-item" onclick="addIcon('home')"><i class="fas fa-home"></i></div>
+                        <div class="element-item" onclick="addIcon('user')"><i class="fas fa-user"></i></div>
+                        <div class="element-item" onclick="addIcon('heart')"><i class="fas fa-heart" style="color:#ef4444"></i></div>
+                        <div class="element-item" onclick="addIcon('star')"><i class="fas fa-star" style="color:#f59e0b"></i></div>
+                        <div class="element-item" onclick="addIcon('mail')"><i class="fas fa-envelope"></i></div>
+                        <div class="element-item" onclick="addIcon('phone')"><i class="fas fa-phone"></i></div>
+                    </div>
+                </div>
+                <div class="tool-category">
+                    <div class="category-header" onclick="toggleCategory(this)">
+                        <span><i class="fas fa-sticky-note"></i> الملصقات</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="category-content">
+                        <div class="element-item" onclick="addSticker('😀')">😀</div>
+                        <div class="element-item" onclick="addSticker('👍')">👍</div>
+                        <div class="element-item" onclick="addSticker('✨')">✨</div>
+                        <div class="element-item" onclick="addSticker('🔥')">🔥</div>
+                        <div class="element-item" onclick="addSticker('💡')">💡</div>
+                        <div class="element-item" onclick="addSticker('🎯')">🎯</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- نص -->
+        <div id="panel-text" class="panel-section hidden">
+            <div class="panel-header"><i class="fas fa-font"></i> النصوص</div>
+            <div class="panel-content">
+                <button class="btn btn-primary" style="width:100%;padding:12px" onclick="addText()"><i class="fas fa-plus"></i> إضافة نص جديد</button>
+                <div class="tool-category">
+                    <div class="section-title"><i class="fas fa-magic"></i> أنماط جاهزة</div>
+                    <div class="style-presets">
+                        <div class="style-preset" onclick="addTextStyle('heading')"><i class="fas fa-heading" style="font-size:24px"></i><span>عنوان</span></div>
+                        <div class="style-preset" onclick="addTextStyle('subheading')"><i class="fas fa-font" style="font-size:18px"></i><span>فرعي</span></div>
+                        <div class="style-preset" onclick="addTextStyle('body')"><i class="fas fa-paragraph" style="font-size:14px"></i><span>نص</span></div>
+                    </div>
+                </div>
+                <div class="tool-category">
+                    <div class="section-title"><i class="fas fa-font"></i> الخطوط</div>
+                    <select class="property-input" onchange="changeFont(this.value)" style="padding:10px">
+                        <option value="Segoe UI">Segoe UI (افتراضي)</option>
+                        <option value="Arial">Arial</option>
+                        <option value="Tahoma">Tahoma</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Courier New">Courier New</option>
+                        <option value="Impact">Impact</option>
+                        <option value="Comic Sans MS">Comic Sans MS</option>
+                    </select>
+                    <div class="font-preview" id="fontPreview">نص تجريبي</div>
+                </div>
+                <div class="tool-category">
+                    <div class="section-title"><i class="fas fa-align-left"></i> المحاذاة</div>
+                    <div class="text-effects">
+                        <button class="effect-btn" onclick="setTextAlign('left')"><i class="fas fa-align-left"></i></button>
+                        <button class="effect-btn" onclick="setTextAlign('center')"><i class="fas fa-align-center"></i></button>
+                        <button class="effect-btn" onclick="setTextAlign('right')"><i class="fas fa-align-right"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- صور -->
+        <div id="panel-images" class="panel-section hidden">
+            <div class="panel-header"><i class="fas fa-image"></i> الصور</div>
+            <div class="panel-content">
+                <div class="tool-category">
+                    <div class="section-title"><i class="fas fa-images"></i> تدرجات لونية</div>
+                    <div class="elements-grid">
+                        <div class="element-item" style="background:linear-gradient(45deg,#ff6b6b,#4ecdc4)" onclick="addGradientBlock('linear-gradient(45deg,#ff6b6b,#4ecdc4)')"></div>
+                        <div class="element-item" style="background:linear-gradient(45deg,#667eea,#764ba2)" onclick="addGradientBlock('linear-gradient(45deg,#667eea,#764ba2)')"></div>
+                        <div class="element-item" style="background:linear-gradient(45deg,#f093fb,#f5576c)" onclick="addGradientBlock('linear-gradient(45deg,#f093fb,#f5576c)')"></div>
+                        <div class="element-item" style="background:linear-gradient(45deg,#4facfe,#00f2fe)" onclick="addGradientBlock('linear-gradient(45deg,#4facfe,#00f2fe)')"></div>
+                        <div class="element-item" style="background:linear-gradient(45deg,#43e97b,#38f9d7)" onclick="addGradientBlock('linear-gradient(45deg,#43e97b,#38f9d7)')"></div>
+                        <div class="element-item" style="background:linear-gradient(45deg,#fa709a,#fee140)" onclick="addGradientBlock('linear-gradient(45deg,#fa709a,#fee140)')"></div>
+                    </div>
+                </div>
+                <div class="tool-category">
+                    <div class="section-title"><i class="fas fa-upload"></i> رفع صورة</div>
+                    <div style="border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:all 0.3s"
+                        ondragover="event.preventDefault();this.style.borderColor='var(--primary)'"
+                        ondragleave="this.style.borderColor='var(--border)'"
+                        ondrop="handleDrop(event)"
+                        onclick="document.getElementById('imageInput').click()">
+                        <i class="fas fa-cloud-upload-alt" style="font-size:48px;color:var(--primary);margin-bottom:15px;display:block"></i>
+                        <div style="font-size:16px;margin-bottom:8px">اسحب أو انقر للرفع</div>
+                        <div style="font-size:12px;color:var(--text-secondary)">JPG, PNG, GIF, WebP</div>
+                        <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- خلفيات -->
+        <div id="panel-backgrounds" class="panel-section hidden">
+            <div class="panel-header"><i class="fas fa-palette"></i> الخلفيات</div>
+            <div class="panel-content">
+                <div class="tool-category">
+                    <div class="section-title"><i class="fas fa-fill-drip"></i> ألوان ثابتة</div>
+                    <div class="color-presets">
+                        <div class="color-preset" style="background:#ffffff" onclick="setBackground('#ffffff')"></div>
+                        <div class="color-preset" style="background:#000000" onclick="setBackground('#000000')"></div>
+                        <div class="color-preset" style="background:#0f172a" onclick="setBackground('#0f172a')"></div>
+                        <div class="color-preset" style="background:#1e293b" onclick="setBackground('#1e293b')"></div>
+                        <div class="color-preset" style="background:#334155" onclick="setBackground('#334155')"></div>
+                        <div class="color-preset" style="background:#64748b" onclick="setBackground('#64748b')"></div>
+                        <div class="color-preset" style="background:#f1f5f9" onclick="setBackground('#f1f5f9')"></div>
+                        <div class="color-preset" style="background:#fef3c7" onclick="setBackground('#fef3c7')"></div>
+                    </div>
+                </div>
+                <div class="tool-category">
+                    <div class="section-title"><i class="fas fa-rainbow"></i> تدرجات لونية</div>
+                    <div class="elements-grid">
+                        <div class="element-item" style="background:linear-gradient(135deg,#667eea,#764ba2)" onclick="setBackground('linear-gradient(135deg,#667eea,#764ba2)')"></div>
+                        <div class="element-item" style="background:linear-gradient(135deg,#f093fb,#f5576c)" onclick="setBackground('linear-gradient(135deg,#f093fb,#f5576c)')"></div>
+                        <div class="element-item" style="background:linear-gradient(135deg,#4facfe,#00f2fe)" onclick="setBackground('linear-gradient(135deg,#4facfe,#00f2fe)')"></div>
+                        <div class="element-item" style="background:linear-gradient(135deg,#43e97b,#38f9d7)" onclick="setBackground('linear-gradient(135deg,#43e97b,#38f9d7)')"></div>
+                        <div class="element-item" style="background:linear-gradient(135deg,#fa709a,#fee140)" onclick="setBackground('linear-gradient(135deg,#fa709a,#fee140)')"></div>
+                        <div class="element-item" style="background:linear-gradient(135deg,#30cfd0,#330867)" onclick="setBackground('linear-gradient(135deg,#30cfd0,#330867)')"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- قوالب -->
+        <div id="panel-templates" class="panel-section hidden">
+            <div class="panel-header"><i class="fas fa-th-large"></i> القوالب الجاهزة</div>
+            <div class="panel-content">
+                <div class="template-grid">
+                    <div class="template-item" onclick="loadTemplate('social')" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+                        <i class="fas fa-share-alt" style="font-size:32px;margin-bottom:10px;display:block"></i>
+                        <div>منشور وسائل تواصل</div><div style="font-size:12px;opacity:0.8;margin-top:5px">1080 × 1080</div>
+                    </div>
+                    <div class="template-item" onclick="loadTemplate('poster')" style="background:linear-gradient(135deg,#f093fb,#f5576c)">
+                        <i class="fas fa-file-image" style="font-size:32px;margin-bottom:10px;display:block"></i>
+                        <div>بوستر إعلاني</div><div style="font-size:12px;opacity:0.8;margin-top:5px">800 × 1200</div>
+                    </div>
+                    <div class="template-item" onclick="loadTemplate('card')" style="background:linear-gradient(135deg,#4facfe,#00f2fe)">
+                        <i class="fas fa-id-card" style="font-size:32px;margin-bottom:10px;display:block"></i>
+                        <div>بطاقة أعمال</div><div style="font-size:12px;opacity:0.8;margin-top:5px">900 × 500</div>
+                    </div>
+                    <div class="template-item" onclick="loadTemplate('banner')" style="background:linear-gradient(135deg,#43e97b,#38f9d7)">
+                        <i class="fas fa-ad" style="font-size:32px;margin-bottom:10px;display:block"></i>
+                        <div>بانر ويب</div><div style="font-size:12px;opacity:0.8;margin-top:5px">1200 × 400</div>
+                    </div>
+                    <div class="template-item" onclick="loadTemplate('story')" style="background:linear-gradient(135deg,#fa709a,#fee140)">
+                        <i class="fas fa-mobile-alt" style="font-size:32px;margin-bottom:10px;display:block"></i>
+                        <div>Story</div><div style="font-size:12px;opacity:0.8;margin-top:5px">1080 × 1920</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- رفع -->
+        <div id="panel-uploads" class="panel-section hidden">
+            <div class="panel-header"><i class="fas fa-cloud-upload-alt"></i> الملفات المرفوعة</div>
+            <div class="panel-content">
+                <div id="uploadsList">
+                    <div style="text-align:center;color:var(--text-secondary);padding:40px">
+                        <i class="fas fa-folder-open" style="font-size:48px;margin-bottom:15px;opacity:0.5;display:block"></i>
+                        <div>لا توجد ملفات مرفوعة بعد</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- مساحة العمل -->
+    <div class="workspace" id="workspace" onclick="handleWorkspaceClick(event)">
+        <div class="canvas-container">
+            <div class="canvas" id="canvas">
+                <div class="grid-overlay" id="gridOverlay"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- لوحة الخصائص -->
+    <div class="properties-panel" id="propertiesPanel">
+        <div class="panel-header"><i class="fas fa-sliders-h"></i> الخصائص</div>
+        <div class="panel-content" id="propertiesContent">
+            <div style="text-align:center;color:var(--text-secondary);padding:40px">
+                <i class="fas fa-mouse-pointer" style="font-size:48px;margin-bottom:15px;opacity:0.3;display:block"></i>
+                <div>اختر عنصراً للتعديل</div>
+                <div style="font-size:12px;margin-top:10px;opacity:0.7">اضغط على أي عنصر في مساحة العمل</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===================== المتغيرات العامة =====================
+let selectedElement = null;
+let elementCounter = 0;
+let isDragging = false;
+let isResizing = false;
+let currentHandle = null;
+let startX, startY, startWidth, startHeight, startLeft, startTop;
+let history = [];
+let historyStep = -1;
+let uploadedFiles = [];
+let gridVisible = false;
+
+// ===================== تبديل الأدوات =====================
+function switchTool(tool) {
+    document.querySelectorAll('.tool-item').forEach(i => i.classList.remove('active'));
+    document.querySelector(`[data-tool="${tool}"]`).classList.add('active');
+    document.querySelectorAll('.panel-section').forEach(p => p.classList.add('hidden'));
+    document.getElementById(`panel-${tool}`).classList.remove('hidden');
+}
+
+function toggleCategory(header) {
+    const content = header.nextElementSibling;
+    const arrow = header.querySelector('.fa-chevron-down');
+    if (!content) return;
+    if (content.style.display === 'none') {
+        content.style.display = 'grid';
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+    } else {
+        content.style.display = 'none';
+        if (arrow) arrow.style.transform = 'rotate(-90deg)';
+    }
+}
+
+// ===================== إضافة عناصر =====================
+function addShape(type) {
+    const canvas = document.getElementById('canvas');
+    const el = document.createElement('div');
+    el.className = 'canvas-element';
+    el.id = `element-${++elementCounter}`;
+    const size = 100;
+    el.style.left = ((canvas.offsetWidth - size) / 2) + 'px';
+    el.style.top = ((canvas.offsetHeight - size) / 2) + 'px';
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+    el.style.background = '#6366f1';
+    if (type === 'circle') el.style.borderRadius = '50%';
+    else if (type === 'rounded') el.style.borderRadius = '20px';
+    else if (type === 'hexagon') el.style.clipPath = 'polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)';
+    else if (type === 'star') el.style.clipPath = 'polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)';
+    else if (type === 'triangle') {
+        el.style.width = '0'; el.style.height = '0';
+        el.style.background = 'transparent';
+        el.style.borderLeft = '50px solid transparent';
+        el.style.borderRight = '50px solid transparent';
+        el.style.borderBottom = '100px solid #6366f1';
+    }
+    el.dataset.type = 'shape';
+    el.dataset.shapeType = type;
+    addResizeHandles(el);
+    canvas.appendChild(el);
+    selectElement(el);
+    saveHistory();
+    showNotification('تم إضافة الشكل', 'success');
+}
+
+function addIcon(type) {
+    const icons = { home: 'fa-home', user: 'fa-user', heart: 'fa-heart', star: 'fa-star', mail: 'fa-envelope', phone: 'fa-phone' };
+    const colors = { heart: '#ef4444', star: '#f59e0b' };
+    const canvas = document.getElementById('canvas');
+    const el = document.createElement('div');
+    el.className = 'canvas-element';
+    el.id = `element-${++elementCounter}`;
+    el.innerHTML = `<i class="fas ${icons[type] || 'fa-star'}" style="font-size:60px;color:${colors[type] || '#6366f1'}"></i>`;
+    el.style.left = '350px'; el.style.top = '250px';
+    el.dataset.type = 'icon';
+    addResizeHandles(el);
+    canvas.appendChild(el);
+    selectElement(el);
+    saveHistory();
+    showNotification('تم إضافة الأيقونة', 'success');
+}
+
+function addSticker(emoji) {
+    const canvas = document.getElementById('canvas');
+    const el = document.createElement('div');
+    el.className = 'canvas-element';
+    el.id = `element-${++elementCounter}`;
+    el.innerHTML = emoji;
+    el.style.fontSize = '80px';
+    el.style.left = '360px'; el.style.top = '260px';
+    el.dataset.type = 'sticker';
+    addResizeHandles(el);
+    canvas.appendChild(el);
+    selectElement(el);
     saveHistory();
 }
 
-// الحصول على قيمة الدوران
-function getRotation(element) {
-    const transform = element.style.transform;
-    const match = transform.match(/rotate\((\d+)deg\)/);
-    return match ? parseInt(match[1]) : 0;
+function addText() {
+    const canvas = document.getElementById('canvas');
+    const el = document.createElement('div');
+    el.className = 'canvas-element';
+    el.id = `element-${++elementCounter}`;
+    el.innerHTML = 'اكتب هنا';
+    el.style.cssText = 'font-size:32px;color:#0f172a;font-family:Segoe UI;left:300px;top:280px;padding:10px;min-width:100px;';
+    el.contentEditable = false;
+    el.dataset.type = 'text';
+    attachTextEvents(el);
+    addResizeHandles(el);
+    canvas.appendChild(el);
+    selectElement(el);
+    saveHistory();
+    showNotification('انقر مزدوجاً للتحرير', 'info');
 }
 
-// دوال تحديث العناصر
-function updateElementSize(prop, value) {
-    if (!selectedElement) return;
-    selectedElement.style[prop] = value + 'px';
-    updateDimensions();
+function addTextStyle(style) {
+    const styles = {
+        heading: { size: '48px', weight: 'bold', text: 'عنوان رئيسي' },
+        subheading: { size: '32px', weight: '600', text: 'عنوان فرعي' },
+        body: { size: '18px', weight: 'normal', text: 'نص عادي للقراءة' }
+    };
+    const s = styles[style] || styles.body;
+    const canvas = document.getElementById('canvas');
+    const el = document.createElement('div');
+    el.className = 'canvas-element';
+    el.id = `element-${++elementCounter}`;
+    el.innerHTML = s.text;
+    el.style.fontSize = s.size;
+    el.style.fontWeight = s.weight;
+    el.style.color = '#0f172a';
+    el.style.fontFamily = 'Segoe UI';
+    el.style.left = '250px'; el.style.top = '280px';
+    el.style.padding = '10px';
+    el.contentEditable = false;
+    el.dataset.type = 'text';
+    attachTextEvents(el);
+    addResizeHandles(el);
+    canvas.appendChild(el);
+    selectElement(el);
     saveHistory();
 }
 
-function updateElementPos(prop, value) {
-    if (!selectedElement) return;
-    selectedElement.style[prop] = value + 'px';
+function attachTextEvents(el) {
+    el.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        el.contentEditable = true;
+        el.focus();
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    });
+    el.addEventListener('blur', () => {
+        el.contentEditable = false;
+        saveHistory();
+    });
+}
+
+function addGradientBlock(gradient) {
+    const canvas = document.getElementById('canvas');
+    const el = document.createElement('div');
+    el.className = 'canvas-element';
+    el.id = `element-${++elementCounter}`;
+    el.style.cssText = `width:300px;height:200px;left:250px;top:200px;background:${gradient};border-radius:12px`;
+    el.dataset.type = 'image';
+    addResizeHandles(el);
+    canvas.appendChild(el);
+    selectElement(el);
     saveHistory();
 }
 
-function updateElementRotation(deg) {
-    if (!selectedElement) return;
-    selectedElement.style.transform = `rotate(${deg}deg)`;
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const src = e.target.result;
+        uploadedFiles.push({ name: file.name, src });
+        updateUploadsPanel();
+        placeImage(src);
+        showNotification('تم رفع الصورة', 'success');
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+}
+
+function handleDrop(event) {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (e) => placeImage(e.target.result);
+    reader.readAsDataURL(file);
+}
+
+function placeImage(src) {
+    const canvas = document.getElementById('canvas');
+    const el = document.createElement('div');
+    el.className = 'canvas-element';
+    el.id = `element-${++elementCounter}`;
+    el.style.cssText = 'width:300px;height:200px;left:250px;top:200px;';
+    el.style.backgroundImage = `url(${src})`;
+    el.style.backgroundSize = 'cover';
+    el.style.backgroundPosition = 'center';
+    el.style.borderRadius = '8px';
+    el.dataset.type = 'image';
+    addResizeHandles(el);
+    canvas.appendChild(el);
+    selectElement(el);
     saveHistory();
 }
 
-function updateElementColor(color) {
+function updateUploadsPanel() {
+    const list = document.getElementById('uploadsList');
+    if (uploadedFiles.length === 0) return;
+    list.innerHTML = uploadedFiles.map((f, i) => `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-dark);border-radius:8px;cursor:pointer"
+            onclick="placeImage('${f.src}')">
+            <img src="${f.src}" style="width:50px;height:50px;object-fit:cover;border-radius:6px">
+            <span style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span>
+        </div>
+    `).join('');
+}
+
+// ===================== الخلفية =====================
+function setBackground(value) {
+    const canvas = document.getElementById('canvas');
+    if (value.includes('gradient')) {
+        canvas.style.background = value;
+    } else {
+        canvas.style.background = value;
+    }
+    saveHistory();
+    showNotification('تم تغيير الخلفية', 'success');
+}
+
+// ===================== القوالب =====================
+function loadTemplate(type) {
+    const canvas = document.getElementById('canvas');
+    const templates = {
+        social: { w: 800, h: 800, bg: 'linear-gradient(135deg,#667eea,#764ba2)', text: 'منشور وسائل التواصل', textColor: '#fff' },
+        poster: { w: 600, h: 900, bg: 'linear-gradient(135deg,#f093fb,#f5576c)', text: 'بوستر إعلاني', textColor: '#fff' },
+        card: { w: 900, h: 500, bg: 'linear-gradient(135deg,#4facfe,#00f2fe)', text: 'بطاقة أعمال', textColor: '#fff' },
+        banner: { w: 800, h: 250, bg: 'linear-gradient(135deg,#43e97b,#38f9d7)', text: 'بانر ويب', textColor: '#0f172a' },
+        story: { w: 450, h: 800, bg: 'linear-gradient(135deg,#fa709a,#fee140)', text: 'Story', textColor: '#fff' }
+    };
+    const t = templates[type];
+    if (!t) return;
+    // مسح الكانفاس
+    canvas.querySelectorAll('.canvas-element').forEach(e => e.remove());
+    canvas.style.width = t.w + 'px';
+    canvas.style.height = t.h + 'px';
+    canvas.style.background = t.bg;
+    // إضافة نص افتراضي
+    const el = document.createElement('div');
+    el.className = 'canvas-element';
+    el.id = `element-${++elementCounter}`;
+    el.innerHTML = t.text;
+    el.style.cssText = `font-size:36px;font-weight:bold;color:${t.textColor};font-family:Segoe UI;left:50%;top:50%;transform:translate(-50%,-50%);padding:10px;white-space:nowrap;`;
+    el.contentEditable = false;
+    el.dataset.type = 'text';
+    attachTextEvents(el);
+    addResizeHandles(el);
+    canvas.appendChild(el);
+    selectElement(null);
+    saveHistory();
+    showNotification('تم تحميل القالب: ' + t.text, 'success');
+}
+
+// ===================== مقابض التحجيم والسحب =====================
+function addResizeHandles(element) {
+    const handles = document.createElement('div');
+    handles.className = 'resize-handles';
+    ['nw','ne','sw','se','n','s','e','w'].forEach(pos => {
+        const h = document.createElement('div');
+        h.className = `handle ${pos}`;
+        h.addEventListener('mousedown', (e) => { e.stopPropagation(); startResize(e, element, pos); });
+        handles.appendChild(h);
+    });
+    element.appendChild(handles);
+    element.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('handle')) return;
+        startDrag(e, element);
+    });
+    element.addEventListener('click', (e) => {
+        if (!isDragging) { e.stopPropagation(); selectElement(element); }
+    });
+}
+
+function startDrag(e, element) {
+    if (element.contentEditable === 'true') return;
+    e.preventDefault();
+    isDragging = false;
+    const startMouseX = e.clientX;
+    const startMouseY = e.clientY;
+    const startElemLeft = parseInt(element.style.left) || 0;
+    const startElemTop = parseInt(element.style.top) || 0;
+
+    function onMove(e) {
+        const dx = e.clientX - startMouseX;
+        const dy = e.clientY - startMouseY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) isDragging = true;
+        element.style.left = (startElemLeft + dx) + 'px';
+        element.style.top = (startElemTop + dy) + 'px';
+        element.classList.add('dragging');
+    }
+
+    function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        element.classList.remove('dragging');
+        if (isDragging) saveHistory();
+        setTimeout(() => { isDragging = false; }, 50);
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+}
+
+function startResize(e, element, pos) {
+    e.preventDefault();
+    isResizing = true;
+    const startMouseX = e.clientX;
+    const startMouseY = e.clientY;
+    const rect = element.getBoundingClientRect();
+    const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+    const startW = element.offsetWidth;
+    const startH = element.offsetHeight;
+    const startL = parseInt(element.style.left) || 0;
+    const startT = parseInt(element.style.top) || 0;
+
+    function onMove(e) {
+        const dx = e.clientX - startMouseX;
+        const dy = e.clientY - startMouseY;
+        let newW = startW, newH = startH, newL = startL, newT = startT;
+        if (pos.includes('e')) newW = Math.max(20, startW + dx);
+        if (pos.includes('s')) newH = Math.max(20, startH + dy);
+        if (pos.includes('w')) { newW = Math.max(20, startW - dx); newL = startL + (startW - newW); }
+        if (pos.includes('n')) { newH = Math.max(20, startH - dy); newT = startT + (startH - newH); }
+        element.style.width = newW + 'px';
+        element.style.height = newH + 'px';
+        element.style.left = newL + 'px';
+        element.style.top = newT + 'px';
+    }
+
+    function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        isResizing = false;
+        saveHistory();
+        updatePropertiesPanel();
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+}
+
+// ===================== اختيار العناصر =====================
+function selectElement(element) {
+    document.querySelectorAll('.canvas-element').forEach(el => el.classList.remove('selected'));
+    if (element) {
+        element.classList.add('selected');
+        selectedElement = element;
+        updatePropertiesPanel();
+    } else {
+        selectedElement = null;
+        document.getElementById('propertiesContent').innerHTML = `
+            <div style="text-align:center;color:var(--text-secondary);padding:40px">
+                <i class="fas fa-mouse-pointer" style="font-size:48px;margin-bottom:15px;opacity:0.3;display:block"></i>
+                <div>اختر عنصراً للتعديل</div>
+                <div style="font-size:12px;margin-top:10px;opacity:0.7">اضغط على أي عنصر في مساحة العمل</div>
+            </div>`;
+    }
+}
+
+function handleWorkspaceClick(e) {
+    if (e.target === document.getElementById('workspace') || e.target === document.getElementById('canvas') || e.target.classList.contains('canvas-container')) {
+        selectElement(null);
+    }
+}
+
+// ===================== لوحة الخصائص =====================
+function updatePropertiesPanel() {
     if (!selectedElement) return;
     const type = selectedElement.dataset.type;
-    const shapeType = selectedElement.dataset.shapeType;
-    
-    if (type === 'shape' && shapeType === 'triangle') {
+    const cs = window.getComputedStyle(selectedElement);
+
+    let html = `
+        <div class="property-group">
+            <div class="section-title"><i class="fas fa-ruler-combined"></i> الحجم والموقع</div>
+            <div class="property-row">
+                <div class="property-col">
+                    <label class="property-label">العرض (px)</label>
+                    <input type="number" class="property-input" value="${selectedElement.offsetWidth}" onchange="updateSize('width',this.value)">
+                </div>
+                <div class="property-col">
+                    <label class="property-label">الطول (px)</label>
+                    <input type="number" class="property-input" value="${selectedElement.offsetHeight}" onchange="updateSize('height',this.value)">
+                </div>
+            </div>
+            <div class="property-row">
+                <div class="property-col">
+                    <label class="property-label">موقع X</label>
+                    <input type="number" class="property-input" value="${parseInt(selectedElement.style.left)||0}" onchange="selectedElement.style.left=this.value+'px';saveHistory()">
+                </div>
+                <div class="property-col">
+                    <label class="property-label">موقع Y</label>
+                    <input type="number" class="property-input" value="${parseInt(selectedElement.style.top)||0}" onchange="selectedElement.style.top=this.value+'px';saveHistory()">
+                </div>
+            </div>
+            <div>
+                <label class="property-label">الدوران: <span id="rotVal">${getRotation(selectedElement)}</span>°</label>
+                <input type="range" min="0" max="360" value="${getRotation(selectedElement)}" oninput="document.getElementById('rotVal').textContent=this.value;setRotation(selectedElement,this.value)">
+            </div>
+        </div>
+        <div class="property-group">
+            <div class="section-title"><i class="fas fa-eye"></i> الشفافية</div>
+            <label class="property-label">الشفافية: <span id="opacityVal">${Math.round((parseFloat(cs.opacity)||1)*100)}</span>%</label>
+            <input type="range" min="0" max="100" value="${Math.round((parseFloat(cs.opacity)||1)*100)}"
+                oninput="document.getElementById('opacityVal').textContent=this.value;selectedElement.style.opacity=this.value/100">
+        </div>`;
+
+    if (type === 'shape' || type === 'image') {
+        html += `
+        <div class="property-group">
+            <div class="section-title"><i class="fas fa-fill-drip"></i> اللون</div>
+            <input type="color" value="${rgbToHex(cs.backgroundColor)||'#6366f1'}" onchange="updateColor(this.value)">
+            <div class="color-presets" style="margin-top:12px">
+                ${['#6366f1','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#0f172a','#ffffff'].map(c =>
+                    `<div class="color-preset" style="background:${c}" onclick="updateColor('${c}')"></div>`
+                ).join('')}
+            </div>
+            <div style="margin-top:12px">
+                <label class="property-label">حواف مستديرة (px)</label>
+                <input type="range" min="0" max="100" value="${parseInt(cs.borderRadius)||0}"
+                    oninput="selectedElement.style.borderRadius=this.value+'px'">
+            </div>
+        </div>`;
+    }
+
+    if (type === 'text') {
+        html += `
+        <div class="property-group">
+            <div class="section-title"><i class="fas fa-font"></i> خصائص النص</div>
+            <label class="property-label">حجم الخط</label>
+            <input type="number" class="property-input" value="${parseInt(cs.fontSize)||32}" onchange="selectedElement.style.fontSize=this.value+'px';saveHistory()">
+            <label class="property-label" style="margin-top:12px">لون النص</label>
+            <input type="color" value="${rgbToHex(cs.color)||'#0f172a'}" onchange="selectedElement.style.color=this.value;saveHistory()">
+            <label class="property-label" style="margin-top:12px">خلفية النص</label>
+            <input type="color" value="${rgbToHex(cs.backgroundColor)||'#ffffff'}" onchange="selectedElement.style.background=this.value">
+            <div style="margin-top:12px">
+                <label class="property-label">التنسيق</label>
+                <div class="text-effects">
+                    <button class="effect-btn ${cs.fontWeight==='bold'||parseInt(cs.fontWeight)>=700?'active':''}" onclick="toggleBold()"><b>B</b></button>
+                    <button class="effect-btn ${cs.fontStyle==='italic'?'active':''}" onclick="toggleItalic()"><i>I</i></button>
+                    <button class="effect-btn ${cs.textDecoration.includes('underline')?'active':''}" onclick="toggleUnderline()"><u>U</u></button>
+                    <button class="effect-btn" onclick="setTextAlign('left')"><i class="fas fa-align-left"></i></button>
+                    <button class="effect-btn" onclick="setTextAlign('center')"><i class="fas fa-align-center"></i></button>
+                    <button class="effect-btn" onclick="setTextAlign('right')"><i class="fas fa-align-right"></i></button>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    html += `
+        <div class="property-group">
+            <div class="section-title"><i class="fas fa-layer-group"></i> الطبقات والإجراءات</div>
+            <div class="layer-controls">
+                <button class="layer-btn" onclick="bringForward()"><i class="fas fa-arrow-up"></i> للأمام</button>
+                <button class="layer-btn" onclick="sendBackward()"><i class="fas fa-arrow-down"></i> للخلف</button>
+            </div>
+            <div class="layer-controls" style="margin-top:8px">
+                <button class="layer-btn" onclick="duplicateElement()"><i class="fas fa-copy"></i> نسخ</button>
+                <button class="layer-btn" onclick="deleteElement()" style="color:#ef4444;border-color:#ef4444"><i class="fas fa-trash"></i> حذف</button>
+            </div>
+        </div>`;
+
+    document.getElementById('propertiesContent').innerHTML = html;
+}
+
+// ===================== دوال الخصائص =====================
+function updateSize(dim, val) {
+    if (!selectedElement) return;
+    selectedElement.style[dim] = val + 'px';
+    saveHistory();
+}
+
+function updateColor(color) {
+    if (!selectedElement) return;
+    const type = selectedElement.dataset.type;
+    if (type === 'shape' && selectedElement.dataset.shapeType === 'triangle') {
         selectedElement.style.borderBottomColor = color;
     } else {
         selectedElement.style.background = color;
@@ -45,659 +864,255 @@ function updateElementColor(color) {
     saveHistory();
 }
 
-function updateElementOpacity(value) {
-    if (!selectedElement) return;
-    selectedElement.style.opacity = value / 100;
-    saveHistory();
+function getRotation(el) {
+    const transform = el.style.transform;
+    if (!transform || !transform.includes('rotate')) return 0;
+    const match = transform.match(/rotate\(([^)]+)deg\)/);
+    return match ? parseInt(match[1]) : 0;
 }
 
-function updateFontSize(size) {
-    if (!selectedElement) return;
-    selectedElement.style.fontSize = size + 'px';
-    saveHistory();
+function setRotation(el, deg) {
+    const current = el.style.transform.replace(/rotate\([^)]*\)/g, '').trim();
+    el.style.transform = `${current} rotate(${deg}deg)`.trim();
 }
 
-function updateBorderWidth(width) {
+function toggleBold() {
     if (!selectedElement) return;
-    selectedElement.style.borderWidth = width + 'px';
-    selectedElement.style.borderStyle = 'solid';
+    const cs = window.getComputedStyle(selectedElement);
+    selectedElement.style.fontWeight = (parseInt(cs.fontWeight) >= 700) ? 'normal' : 'bold';
     saveHistory();
+    updatePropertiesPanel();
 }
 
-function updateBorderColor(color) {
+function toggleItalic() {
     if (!selectedElement) return;
-    selectedElement.style.borderColor = color;
+    const cs = window.getComputedStyle(selectedElement);
+    selectedElement.style.fontStyle = cs.fontStyle === 'italic' ? 'normal' : 'italic';
     saveHistory();
+    updatePropertiesPanel();
 }
 
-function updateBorderRadius(radius) {
+function toggleUnderline() {
     if (!selectedElement) return;
-    selectedElement.style.borderRadius = radius + 'px';
+    const cs = window.getComputedStyle(selectedElement);
+    selectedElement.style.textDecoration = cs.textDecoration.includes('underline') ? 'none' : 'underline';
     saveHistory();
+    updatePropertiesPanel();
 }
 
-// طبقات
+function changeFont(font) {
+    if (selectedElement) {
+        selectedElement.style.fontFamily = font;
+        document.getElementById('fontPreview').style.fontFamily = font;
+        saveHistory();
+    }
+}
+
+function setTextAlign(align) {
+    if (selectedElement) {
+        selectedElement.style.textAlign = align;
+        saveHistory();
+    }
+}
+
 function bringForward() {
     if (!selectedElement) return;
-    const currentZ = parseInt(selectedElement.style.zIndex) || 1;
-    selectedElement.style.zIndex = currentZ + 1;
-    saveHistory();
+    const current = parseInt(selectedElement.style.zIndex) || 0;
+    selectedElement.style.zIndex = current + 1;
 }
 
 function sendBackward() {
     if (!selectedElement) return;
-    const currentZ = parseInt(selectedElement.style.zIndex) || 1;
-    selectedElement.style.zIndex = Math.max(1, currentZ - 1);
-    saveHistory();
+    const current = parseInt(selectedElement.style.zIndex) || 0;
+    selectedElement.style.zIndex = Math.max(0, current - 1);
 }
 
-function bringToFront() {
-    if (!selectedElement) return;
-    let maxZ = 1;
-    document.querySelectorAll('.canvas-element').forEach(el => {
-        maxZ = Math.max(maxZ, parseInt(el.style.zIndex) || 1);
-    });
-    selectedElement.style.zIndex = maxZ + 1;
-    saveHistory();
-}
-
-function sendToBack() {
-    if (!selectedElement) return;
-    selectedElement.style.zIndex = 1;
-    saveHistory();
-}
-
-function deleteElement() {
-    if (!selectedElement) return;
-    selectedElement.classList.add('deleting');
-    setTimeout(() => {
-        selectedElement.remove();
-        selectedElement = null;
-        document.getElementById('propertiesContent').innerHTML = `
-            <div style="text-align: center; color: var(--text-secondary); padding: 40px;">
-                <i class="fas fa-mouse-pointer" style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;"></i>
-                <div>اختر عنصراً للتعديل</div>
-                <div style="font-size: 12px; margin-top: 10px; opacity: 0.7;">
-                    اضغط على أي عنصر في مساحة العمل<br>
-                    أو اسحب عنصراً جديداً من الأدوات
-                </div>
-            </div>
-        `;
-        saveHistory();
-    }, 300);
-}
-
-// السحب والإفلات
-function startDrag(e, element) {
-    if (e.target.classList.contains('handle')) return;
-    if (element.contentEditable === 'true') return;
-    
-    isDragging = true;
-    selectElement(element);
-    
-    element.classList.add('dragging');
-    
-    startX = e.clientX - element.offsetLeft;
-    startY = e.clientY - element.offsetTop;
-    
-    document.addEventListener('mousemove', drag);
-    document.addEventListener('mouseup', stopDrag);
-}
-
-function drag(e) {
-    if (!isDragging || !selectedElement) return;
-    
-    const canvas = document.getElementById('canvas');
-    let x = e.clientX - startX;
-    let y = e.clientY - startY;
-    
-    // التقاط للشبكة
-    if (document.getElementById('gridOverlay').classList.contains('visible')) {
-        x = Math.round(x / 20) * 20;
-        y = Math.round(y / 20) * 20;
-    }
-    
-    // الحدود
-    x = Math.max(0, Math.min(x, canvas.offsetWidth - selectedElement.offsetWidth));
-    y = Math.max(0, Math.min(y, canvas.offsetHeight - selectedElement.offsetHeight));
-    
-    selectedElement.style.left = x + 'px';
-    selectedElement.style.top = y + 'px';
-    
-    showAlignmentGuides(selectedElement);
-    updatePropertiesPanel();
-}
-
-function stopDrag() {
-    if (isDragging && selectedElement) {
-        isDragging = false;
-        selectedElement.classList.remove('dragging');
-        document.getElementById('alignmentGuides').innerHTML = '';
-        saveHistory();
-    }
-    document.removeEventListener('mousemove', drag);
-    document.removeEventListener('mouseup', stopDrag);
-}
-
-// خطوط المحاذاة
-function showAlignmentGuides(element) {
-    const rect = element.getBoundingClientRect();
-    const canvasRect = document.getElementById('canvas').getBoundingClientRect();
-    const guides = document.getElementById('alignmentGuides');
-    guides.innerHTML = '';
-    
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    
-    document.querySelectorAll('.canvas-element').forEach(el => {
-        if (el === element) return;
-        const elRect = el.getBoundingClientRect();
-        const elCenterX = elRect.left + elRect.width / 2;
-        const elCenterY = elRect.top + elRect.height / 2;
-        
-        // محاذاة المركز الرأسي
-        if (Math.abs(centerX - elCenterX) < 10) {
-            addGuide('v', centerX - canvasRect.left);
-        }
-        
-        // محاذاة المركز الأفقي
-        if (Math.abs(centerY - elCenterY) < 10) {
-            addGuide('h', centerY - canvasRect.top);
-        }
-    });
-}
-
-function addGuide(type, position) {
-    const guides = document.getElementById('alignmentGuides');
-    const guide = document.createElement('div');
-    guide.className = `guide-line guide-${type} visible`;
-    if (type === 'h') {
-        guide.style.top = position + 'px';
-    } else {
-        guide.style.left = position + 'px';
-    }
-    guides.appendChild(guide);
-}
-
-// التحجيم
-function startResize(e, element, handle) {
-    e.stopPropagation();
-    isResizing = true;
-    currentHandle = handle;
-    
-    startX = e.clientX;
-    startY = e.clientY;
-    startWidth = element.offsetWidth;
-    startHeight = element.offsetHeight;
-    startLeft = element.offsetLeft;
-    startTop = element.offsetTop;
-    
-    document.addEventListener('mousemove', resize);
-    document.addEventListener('mouseup', stopResize);
-}
-
-function resize(e) {
-    if (!isResizing || !selectedElement) return;
-    
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    
-    if (currentHandle.includes('e')) {
-        selectedElement.style.width = Math.max(20, startWidth + dx) + 'px';
-    }
-    if (currentHandle.includes('s')) {
-        selectedElement.style.height = Math.max(20, startHeight + dy) + 'px';
-    }
-    if (currentHandle.includes('w')) {
-        const newWidth = Math.max(20, startWidth - dx);
-        selectedElement.style.width = newWidth + 'px';
-        selectedElement.style.left = (startLeft + startWidth - newWidth) + 'px';
-    }
-    if (currentHandle.includes('n')) {
-        const newHeight = Math.max(20, startHeight - dy);
-        selectedElement.style.height = newHeight + 'px';
-        selectedElement.style.top = (startTop + startHeight - newHeight) + 'px';
-    }
-    
-    updateDimensions();
-    updatePropertiesPanel();
-}
-
-function stopResize() {
-    if (isResizing) {
-        isResizing = false;
-        saveHistory();
-    }
-    document.removeEventListener('mousemove', resize);
-    document.removeEventListener('mouseup', stopResize);
-}
-
-function updateDimensions() {
-    if (!selectedElement) return;
-    const dims = selectedElement.querySelector('.dimensions');
-    if (dims) {
-        dims.textContent = `${Math.round(selectedElement.offsetWidth)} × ${Math.round(selectedElement.offsetHeight)}`;
-    }
-}
-
-// الخلفية
-function setBackground(value) {
-    document.getElementById('canvas').style.background = value;
-    saveHistory();
-    showNotification('تم تغيير الخلفية', 'success');
-}
-
-function setBackgroundGrid() {
-    const canvas = document.getElementById('canvas');
-    canvas.style.background = `
-        repeating-linear-gradient(0deg, transparent, transparent 19px, #e2e8f0 20px),
-        repeating-linear-gradient(90deg, transparent, transparent 19px, #e2e8f0 20px)
-    `;
-    canvas.style.backgroundColor = '#ffffff';
-    saveHistory();
-}
-
-function setBackgroundDots() {
-    const canvas = document.getElementById('canvas');
-    canvas.style.background = `
-        radial-gradient(circle, #cbd5e1 2px, transparent 2px)
-    `;
-    canvas.style.backgroundSize = '20px 20px';
-    canvas.style.backgroundColor = '#ffffff';
-    saveHistory();
-}
-
-// الشبكة
-function toggleGrid() {
-    document.getElementById('gridOverlay').classList.toggle('visible');
-    const isVisible = document.getElementById('gridOverlay').classList.contains('visible');
-    showNotification(isVisible ? 'تم تفعيل الشبكة' : 'تم إخفاء الشبكة', 'info');
-}
-
-// القوالب
-function loadTemplate(type) {
-    const canvas = document.getElementById('canvas');
-    canvas.innerHTML = '<div class="grid-overlay" id="gridOverlay"></div><div class="alignment-guides" id="alignmentGuides"></div>';
-    elementCounter = 0;
-    
-    const templates = {
-        social: { width: 600, height: 600 },
-        poster: { width: 800, height: 1200 },
-        card: { width: 900, height: 500 },
-        banner: { width: 1200, height: 400 },
-        story: { width: 450, height: 800 },
-        resume: { width: 800, height: 1131 }
-    };
-    
-    const template = templates[type];
-    if (template) {
-        canvas.style.width = template.width + 'px';
-        canvas.style.height = template.height + 'px';
-    }
-    
-    // إضافة عناصر افتراضية حسب القالب
-    if (type === 'social') {
-        addShape('circle');
-        const shape = document.querySelector('.canvas-element:last-child');
-        if (shape) {
-            shape.style.width = '100px';
-            shape.style.height = '100px';
-            shape.style.left = '50px';
-            shape.style.top = '50px';
-        }
-        addTextStyle('heading');
-        const text = document.querySelector('.canvas-element:last-child');
-        if (text) {
-            text.innerHTML = 'منشور جديد';
-            text.style.left = '200px';
-            text.style.top = '250px';
-        }
-    } else if (type === 'card') {
-        addShape('rect');
-        const shape = document.querySelector('.canvas-element:last-child');
-        if (shape) {
-            shape.style.width = '150px';
-            shape.style.height = '150px';
-            shape.style.left = '50px';
-            shape.style.top = '175px';
-            shape.style.background = '#6366f1';
-        }
-        addTextStyle('heading');
-        const text = document.querySelector('.canvas-element:last-child');
-        if (text) {
-            text.innerHTML = 'اسم الشركة';
-            text.style.left = '250px';
-            text.style.top = '200px';
-        }
-        addTextStyle('body');
-        const text2 = document.querySelector('.canvas-element:last-child');
-        if (text2) {
-            text2.innerHTML = 'info@company.com<br>+966 50 123 4567';
-            text2.style.left = '250px';
-            text2.style.top = '280px';
-        }
-    }
-    
-    showNotification('تم تحميل القالب بنجاح', 'success');
-    saveHistory();
-}
-
-// رفع الصور
-function handleImageUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const canvas = document.getElementById('canvas');
-        const element = document.createElement('div');
-        element.className = 'canvas-element';
-        element.id = `element-${++elementCounter}`;
-        
-        element.style.width = '300px';
-        element.style.height = '200px';
-        element.style.left = '250px';
-        element.style.top = '200px';
-        element.style.backgroundImage = `url(${event.target.result})`;
-        element.style.backgroundSize = 'cover';
-        element.style.backgroundPosition = 'center';
-        element.style.borderRadius = '8px';
-        element.dataset.type = 'image';
-        
-        addResizeHandles(element);
-        canvas.appendChild(element);
-        selectElement(element);
-        
-        // إضافة للقائمة
-        uploadedFiles.push({ name: file.name, src: event.target.result });
-        updateUploadsList();
-        saveHistory();
-        showNotification('تم رفع الصورة بنجاح', 'success');
-    };
-    reader.readAsDataURL(file);
-}
-
-function updateUploadsList() {
-    const list = document.getElementById('uploadsList');
-    if (uploadedFiles.length === 0) {
-        list.innerHTML = `
-            <div style="text-align: center; color: var(--text-secondary); padding: 40px;">
-                <i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
-                <div>لا توجد ملفات مرفوعة بعد</div>
-            </div>
-        `;
-        return;
-    }
-    
-    list.innerHTML = uploadedFiles.map((file, index) => `
-        <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-dark); border-radius: 8px; cursor: pointer;" 
-            onclick="insertUploadedImage(${index})">
-            <img src="${file.src}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
-            <div style="flex: 1; overflow: hidden; text-overflow: ellipsis;">${file.name}</div>
-            <i class="fas fa-plus" style="color: var(--primary);"></i>
-        </div>
-    `).join('');
-}
-
-function insertUploadedImage(index) {
-    const file = uploadedFiles[index];
-    const canvas = document.getElementById('canvas');
-    const element = document.createElement('div');
-    element.className = 'canvas-element';
-    element.id = `element-${++elementCounter}`;
-    
-    element.style.width = '300px';
-    element.style.height = '200px';
-    element.style.left = '250px';
-    element.style.top = '200px';
-    element.style.backgroundImage = `url(${file.src})`;
-    element.style.backgroundSize = 'cover';
-    element.style.backgroundPosition = 'center';
-    element.style.borderRadius = '8px';
-    element.dataset.type = 'image';
-    
-    addResizeHandles(element);
-    canvas.appendChild(element);
-    selectElement(element);
-    saveHistory();
-}
-
-// التاريخ
-function saveHistory() {
-    const canvas = document.getElementById('canvas');
-    history = history.slice(0, historyStep + 1);
-    history.push({
-        html: canvas.innerHTML,
-        width: canvas.style.width,
-        height: canvas.style.height,
-        background: canvas.style.background
-    });
-    historyStep++;
-    if (history.length > 50) history.shift();
-}
-
-function undo() {
-    if (historyStep > 0) {
-        historyStep--;
-        restoreHistory();
-        showNotification('تم التراجع', 'info');
-    }
-}
-
-function redo() {
-    if (historyStep < history.length - 1) {
-        historyStep++;
-        restoreHistory();
-        showNotification('تمت الإعادة', 'info');
-    }
-}
-
-function restoreHistory() {
-    const state = history[historyStep];
-    const canvas = document.getElementById('canvas');
-    canvas.innerHTML = state.html;
-    canvas.style.width = state.width;
-    canvas.style.height = state.height;
-    canvas.style.background = state.background;
-    reattachEvents();
-}
-
-function reattachEvents() {
-    document.querySelectorAll('.canvas-element').forEach(el => {
-        addResizeHandles(el);
-    });
-}
-
-// الحفظ والاسترجاع
-function saveProject() {
-    const canvas = document.getElementById('canvas');
-    const projectName = document.getElementById('projectName').value;
-    
-    const projectData = {
-        name: projectName,
-        html: canvas.innerHTML,
-        width: canvas.style.width,
-        height: canvas.style.height,
-        background: canvas.style.background,
-        timestamp: new Date().toISOString()
-    };
-    
-    localStorage.setItem('bildflow_last_project', JSON.stringify(projectData));
-    showNotification('تم حفظ المشروع بنجاح!', 'success');
-}
-
-function loadLastProject() {
-    const saved = localStorage.getItem('bildflow_last_project');
-    if (!saved) {
-        showNotification('لا يوجد مشروع محفوظ', 'error');
-        return;
-    }
-    
-    const project = JSON.parse(saved);
-    const canvas = document.getElementById('canvas');
-    
-    document.getElementById('projectName').value = project.name;
-    canvas.innerHTML = project.html;
-    canvas.style.width = project.width;
-    canvas.style.height = project.height;
-    canvas.style.background = project.background;
-    
-    reattachEvents();
-    saveHistory();
-    showNotification('تم استعادة المشروع', 'success');
-}
-
-// التصدير
-function exportDesign() {
-    const canvas = document.getElementById('canvas');
-    const grid = document.getElementById('gridOverlay');
-    const gridVisible = grid.classList.contains('visible');
-    
-    if (gridVisible) grid.classList.remove('visible');
-    document.querySelectorAll('.canvas-element').forEach(el => el.classList.remove('selected'));
-    
-    document.getElementById('loadingOverlay').classList.add('active');
-    
-    html2canvas(canvas, {
-        scale: 2,
-        backgroundColor: null,
-        logging: false,
-        useCORS: true,
-        allowTaint: true
-    }).then((canvasImage) => {
-        const link = document.createElement('a');
-        link.download = document.getElementById('projectName').value.replace(/\s+/g, '_') + '.png';
-        link.href = canvasImage.toDataURL('image/png');
-        link.click();
-        
-        if (gridVisible) grid.classList.add('visible');
-        document.getElementById('loadingOverlay').classList.remove('active');
-        showNotification('تم تصدير التصميم بنجاح!', 'success');
-    }).catch(error => {
-        console.error('خطأ في التصدير:', error);
-        document.getElementById('loadingOverlay').classList.remove('active');
-        showNotification('حدث خطأ أثناء التصدير', 'error');
-    });
-}
-
-// الإشعارات
-function showNotification(message, type = 'info') {
-    const existing = document.querySelector('.notification');
-    if (existing) existing.remove();
-    
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    
-    const icons = {
-        success: '<i class="fas fa-check-circle"></i>',
-        error: '<i class="fas fa-exclamation-circle"></i>',
-        info: '<i class="fas fa-info-circle"></i>'
-    };
-    
-    notification.innerHTML = `${icons[type]} ${message}`;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'fadeIn 0.3s ease reverse';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
-}
-
-// مساعدات
-function rgbToHex(rgb) {
-    if (!rgb || rgb === 'transparent') return '#6366f1';
-    const result = rgb.match(/\d+/g);
-    if (!result) return '#6366f1';
-    return '#' + result.slice(0, 3).map(x => {
-        const hex = parseInt(x).toString(16);
-        return hex.length === 1 ? '0' + hex : hex;
-    }).join('');
-}
-
-// تكرار العنصر
 function duplicateElement() {
     if (!selectedElement) return;
     const clone = selectedElement.cloneNode(true);
     clone.id = `element-${++elementCounter}`;
-    
-    const left = parseInt(clone.style.left) || 0;
-    const top = parseInt(clone.style.top) || 0;
-    clone.style.left = (left + 20) + 'px';
-    clone.style.top = (top + 20) + 'px';
+    clone.style.left = (parseInt(selectedElement.style.left) + 20) + 'px';
+    clone.style.top = (parseInt(selectedElement.style.top) + 20) + 'px';
     clone.classList.remove('selected');
-    
-    addResizeHandles(clone);
+    // re-attach drag/resize events
+    addDragToExistingElement(clone);
     document.getElementById('canvas').appendChild(clone);
     selectElement(clone);
     saveHistory();
-    showNotification('تم تكرار العنصر', 'success');
+    showNotification('تم نسخ العنصر', 'success');
 }
 
-// اختصارات لوحة المفاتيح
+function addDragToExistingElement(el) {
+    // handles already cloned, re-attach events
+    el.querySelectorAll('.handle').forEach(h => {
+        const pos = Array.from(h.classList).find(c => ['nw','ne','sw','se','n','s','e','w'].includes(c));
+        h.addEventListener('mousedown', (e) => { e.stopPropagation(); startResize(e, el, pos); });
+    });
+    el.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('handle')) return;
+        startDrag(e, el);
+    });
+    el.addEventListener('click', (e) => {
+        if (!isDragging) { e.stopPropagation(); selectElement(el); }
+    });
+    if (el.dataset.type === 'text') attachTextEvents(el);
+}
+
+function deleteElement() {
+    if (!selectedElement) return;
+    selectedElement.remove();
+    selectedElement = null;
+    document.getElementById('propertiesContent').innerHTML = `
+        <div style="text-align:center;color:var(--text-secondary);padding:40px">
+            <i class="fas fa-mouse-pointer" style="font-size:48px;margin-bottom:15px;opacity:0.3;display:block"></i>
+            <div>اختر عنصراً للتعديل</div>
+        </div>`;
+    saveHistory();
+    showNotification('تم حذف العنصر', 'error');
+}
+
+// ===================== أدوات مساعدة =====================
+function rgbToHex(rgb) {
+    if (!rgb || rgb === 'transparent' || rgb === 'rgba(0, 0, 0, 0)') return '#ffffff';
+    if (rgb.startsWith('#')) return rgb;
+    const match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+    if (!match) return '#ffffff';
+    return '#' + match.slice(1).map(n => parseInt(n).toString(16).padStart(2, '0')).join('');
+}
+
+function showNotification(msg, type = 'info') {
+    const existing = document.querySelectorAll('.notification');
+    existing.forEach(n => n.remove());
+    const n = document.createElement('div');
+    n.className = `notification ${type}`;
+    const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
+    n.innerHTML = `<i class="fas ${icons[type]||'fa-info-circle'}"></i> ${msg}`;
+    document.body.appendChild(n);
+    setTimeout(() => n.remove(), 3000);
+}
+
+// ===================== تاريخ التراجع/الإعادة =====================
+function saveHistory() {
+    const canvas = document.getElementById('canvas');
+    const state = { html: canvas.innerHTML, bg: canvas.style.background, w: canvas.style.width, h: canvas.style.height };
+    historyStep++;
+    history = history.slice(0, historyStep);
+    history.push(JSON.stringify(state));
+    if (history.length > 50) { history.shift(); historyStep--; }
+}
+
+function undo() {
+    if (historyStep <= 0) { showNotification('لا يوجد تراجع', 'info'); return; }
+    historyStep--;
+    restoreState(JSON.parse(history[historyStep]));
+}
+
+function redo() {
+    if (historyStep >= history.length - 1) { showNotification('لا يوجد إعادة', 'info'); return; }
+    historyStep++;
+    restoreState(JSON.parse(history[historyStep]));
+}
+
+function restoreState(state) {
+    const canvas = document.getElementById('canvas');
+    canvas.innerHTML = state.html;
+    canvas.style.background = state.bg;
+    if (state.w) canvas.style.width = state.w;
+    if (state.h) canvas.style.height = state.h;
+    // Re-attach events to all elements
+    canvas.querySelectorAll('.canvas-element').forEach(el => {
+        addDragToExistingElement(el);
+    });
+    selectElement(null);
+}
+
+// ===================== الشبكة =====================
+function toggleGrid() {
+    gridVisible = !gridVisible;
+    document.getElementById('gridOverlay').classList.toggle('visible', gridVisible);
+}
+
+// ===================== حفظ/تحميل =====================
+function saveProject() {
+    const canvas = document.getElementById('canvas');
+    const data = {
+        name: document.getElementById('projectName').value,
+        html: canvas.innerHTML,
+        bg: canvas.style.background,
+        w: canvas.style.width,
+        h: canvas.style.height
+    };
+    localStorage.setItem('bildflow_project', JSON.stringify(data));
+    showNotification('تم حفظ المشروع', 'success');
+}
+
+function loadLastProject() {
+    const saved = localStorage.getItem('bildflow_project');
+    if (!saved) { showNotification('لا يوجد مشروع محفوظ', 'info'); return; }
+    const data = JSON.parse(saved);
+    const canvas = document.getElementById('canvas');
+    document.getElementById('projectName').value = data.name || '';
+    canvas.innerHTML = data.html || '';
+    canvas.style.background = data.bg || 'white';
+    if (data.w) canvas.style.width = data.w;
+    if (data.h) canvas.style.height = data.h;
+    canvas.querySelectorAll('.canvas-element').forEach(el => addDragToExistingElement(el));
+    selectElement(null);
+    showNotification('تم تحميل المشروع', 'success');
+}
+
+// ===================== التصدير =====================
+function exportDesign() {
+    const canvas = document.getElementById('canvas');
+    const overlay = document.getElementById('loadingOverlay');
+    overlay.classList.add('active');
+    // إخفاء مقابض التحجيم مؤقتاً
+    const handles = canvas.querySelectorAll('.resize-handles');
+    handles.forEach(h => h.style.display = 'none');
+    const selected = canvas.querySelector('.selected');
+    if (selected) selected.classList.remove('selected');
+
+    html2canvas(canvas, { useCORS: true, allowTaint: true, scale: 2 }).then(canvasEl => {
+        const link = document.createElement('a');
+        link.download = (document.getElementById('projectName').value || 'design') + '.png';
+        link.href = canvasEl.toDataURL('image/png');
+        link.click();
+        // استعادة المقابض
+        handles.forEach(h => h.style.display = '');
+        if (selected) selected.classList.add('selected');
+        overlay.classList.remove('active');
+        showNotification('تم التصدير بنجاح!', 'success');
+    }).catch(() => {
+        overlay.classList.remove('active');
+        showNotification('حدث خطأ في التصدير', 'error');
+    });
+}
+
+// ===================== اختصارات لوحة المفاتيح =====================
 document.addEventListener('keydown', (e) => {
-    // Ctrl+S حفظ
-    if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        saveProject();
+    if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z') { e.preventDefault(); undo(); }
+        else if (e.key === 'y') { e.preventDefault(); redo(); }
+        else if (e.key === 's') { e.preventDefault(); saveProject(); }
+        else if (e.key === 'g') { e.preventDefault(); toggleGrid(); }
+        else if (e.key === 'd') { e.preventDefault(); duplicateElement(); }
     }
-    
-    // Ctrl+D تكرار
-    if (e.ctrlKey && e.key === 'd' && selectedElement) {
-        e.preventDefault();
-        duplicateElement();
-    }
-    
-    // Ctrl+G شبكة
-    if (e.ctrlKey && e.key === 'g') {
-        e.preventDefault();
-        toggleGrid();
-    }
-    
-    // Delete حذف
-    if (e.key === 'Delete' && selectedElement) {
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedElement && selectedElement.contentEditable !== 'true') {
         deleteElement();
     }
-    
-    // الأسهم لتحريك
-    if (selectedElement && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        e.preventDefault();
+    // تحريك العنصر بالأسهم
+    if (selectedElement && selectedElement.contentEditable !== 'true') {
         const step = e.shiftKey ? 10 : 1;
-        const left = parseInt(selectedElement.style.left) || 0;
-        const top = parseInt(selectedElement.style.top) || 0;
-        
-        switch(e.key) {
-            case 'ArrowLeft': selectedElement.style.left = (left - step) + 'px'; break;
-            case 'ArrowRight': selectedElement.style.left = (left + step) + 'px'; break;
-            case 'ArrowUp': selectedElement.style.top = (top - step) + 'px'; break;
-            case 'ArrowDown': selectedElement.style.top = (top + step) + 'px'; break;
-        }
-        updatePropertiesPanel();
-        saveHistory();
+        if (e.key === 'ArrowLeft') { selectedElement.style.left = (parseInt(selectedElement.style.left)||0) - step + 'px'; e.preventDefault(); }
+        if (e.key === 'ArrowRight') { selectedElement.style.left = (parseInt(selectedElement.style.left)||0) + step + 'px'; e.preventDefault(); }
+        if (e.key === 'ArrowUp') { selectedElement.style.top = (parseInt(selectedElement.style.top)||0) - step + 'px'; e.preventDefault(); }
+        if (e.key === 'ArrowDown') { selectedElement.style.top = (parseInt(selectedElement.style.top)||0) + step + 'px'; e.preventDefault(); }
     }
 });
 
-// إلغاء الاختيار عند النقر خارج العناصر
-document.getElementById('canvas').addEventListener('mousedown', (e) => {
-    if (e.target.id === 'canvas' || e.target.id === 'gridOverlay' || e.target.id === 'alignmentGuides') {
-        selectElement(null);
-    }
-});
-
-// دعم السحب والإفلات للملفات
-document.addEventListener('dragover', (e) => {
-    e.preventDefault();
-});
-
-document.addEventListener('drop', (e) => {
-    e.preventDefault();
-    const files = e.dataTransfer.files;
-    if (files.length > 0 && files[0].type.startsWith('image/')) {
-        const input = document.getElementById('imageInput');
-        input.files = files;
-        handleImageUpload({ target: input });
-    }
-});
-
-// تهيئة
+// ===================== تهيئة =====================
 saveHistory();
-showNotification('مرحباً بك في BildFlow Pro! ابدأ التصميم الآن', 'success');
+showNotification('مرحباً بك في BildFlow Pro!', 'info');
+</script>
+</body>
+</html>
