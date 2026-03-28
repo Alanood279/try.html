@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>BildFlow Pro - منشئ التصاميم الاحترافي</title>
+    <title>BildFlow Pro - مثل Canva بالضبط</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -24,18 +24,17 @@
             --border: #374151;
             --success: #10b981;
             --error: #ef4444;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: var(--bg-dark);
             color: var(--text-primary);
             overflow: hidden;
             height: 100vh;
         }
 
-        /* شريط علوي بسيط */
+        /* شريط علوي */
         .top-bar {
             height: 56px;
             background: var(--bg-panel);
@@ -62,7 +61,6 @@
             display: flex;
             gap: 8px;
             align-items: center;
-            flex-wrap: wrap;
         }
 
         .btn {
@@ -152,7 +150,6 @@
             flex-direction: column;
             overflow-y: auto;
             flex-shrink: 0;
-            transition: width 0.2s;
         }
 
         .sidebar-header {
@@ -197,16 +194,22 @@
         /* عناصر قابلة للتحريك */
         .element {
             position: absolute;
-            cursor: move;
+            cursor: grab;
             user-select: none;
+            transition: box-shadow 0.1s;
+        }
+
+        .element:active {
+            cursor: grabbing;
         }
 
         .element.selected {
             outline: 2px solid var(--primary);
             outline-offset: 2px;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
         }
 
-        /* مقابض التحجيم */
+        /* مقابض التحجيم - مثل Canva */
         .resize-handles {
             position: absolute;
             inset: 0;
@@ -220,22 +223,102 @@
 
         .handle {
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             background: white;
             border: 2px solid var(--primary);
             border-radius: 50%;
             pointer-events: all;
+            transition: transform 0.1s;
         }
 
-        .handle.nw { top: -5px; left: -5px; cursor: nw-resize; }
-        .handle.ne { top: -5px; right: -5px; cursor: ne-resize; }
-        .handle.sw { bottom: -5px; left: -5px; cursor: sw-resize; }
-        .handle.se { bottom: -5px; right: -5px; cursor: se-resize; }
-        .handle.n { top: -5px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
-        .handle.s { bottom: -5px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
-        .handle.w { left: -5px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
-        .handle.e { right: -5px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
+        .handle:hover {
+            transform: scale(1.3);
+            background: var(--primary);
+        }
+
+        .handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
+        .handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
+        .handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
+        .handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
+        .handle.n { top: -6px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+        .handle.s { bottom: -6px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+        .handle.w { left: -6px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
+        .handle.e { right: -6px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
+        
+        /* مقبض الدوران - مثل Canva */
+        .rotate-handle {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 16px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: grab;
+            pointer-events: all;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        
+        .rotate-handle::before {
+            content: '';
+            position: absolute;
+            top: 16px;
+            left: 7px;
+            width: 2px;
+            height: 24px;
+            background: var(--primary);
+        }
+        
+        .rotate-handle:hover {
+            transform: translateX(-50%) scale(1.2);
+        }
+
+        /* مؤشرات الأبعاد */
+        .dimension-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        
+        .element.selected .dimension-label {
+            opacity: 1;
+        }
+
+        /* خطوط المحاذاة */
+        .alignment-guide {
+            position: absolute;
+            background: var(--primary);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+        
+        .alignment-guide.visible {
+            opacity: 0.8;
+        }
+        
+        .guide-horizontal {
+            height: 1px;
+            width: 100%;
+        }
+        
+        .guide-vertical {
+            width: 1px;
+            height: 100%;
+        }
 
         /* شبكة مساعدة */
         .grid-overlay {
@@ -352,7 +435,6 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-dark); }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
     </style>
 </head>
 <body>
@@ -412,11 +494,6 @@
                     <div class="element-card" onclick="addIcon('heart')"><i class="fas fa-heart" style="color:#ef4444"></i></div>
                     <div class="element-card" onclick="addIcon('star')"><i class="fas fa-star" style="color:#f59e0b"></i></div>
                 </div>
-                <div class="elements-grid" style="margin-top: 12px;">
-                    <div class="element-card" onclick="addIcon('home')"><i class="fas fa-home"></i></div>
-                    <div class="element-card" onclick="addIcon('user')"><i class="fas fa-user"></i></div>
-                    <div class="element-card" onclick="addIcon('mail')"><i class="fas fa-envelope"></i></div>
-                </div>
             </div>
         </div>
 
@@ -430,16 +507,6 @@
                     <div class="element-card" onclick="addTextStyle('subheading')" style="font-size:16px; font-weight:600">عنوان فرعي</div>
                     <div class="element-card" onclick="addTextStyle('body')" style="font-size:14px">نص عادي</div>
                 </div>
-                <div style="margin-top: 16px;">
-                    <label class="property-label">الخط</label>
-                    <select class="property-input" id="fontSelect" onchange="changeFont(this.value)">
-                        <option value="Segoe UI">Segoe UI</option>
-                        <option value="Arial">Arial</option>
-                        <option value="Tahoma">Tahoma</option>
-                        <option value="Georgia">Georgia</option>
-                        <option value="Impact">Impact</option>
-                    </select>
-                </div>
             </div>
         </div>
 
@@ -452,11 +519,6 @@
                     <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: var(--primary); margin-bottom: 10px; display: block;"></i>
                     <div style="font-size: 14px;">انقر لرفع صورة</div>
                     <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="uploadImage(event)">
-                </div>
-                <div class="elements-grid" style="grid-template-columns: repeat(3, 1fr);">
-                    <div class="element-card" style="background: linear-gradient(135deg,#667eea,#764ba2)" onclick="addGradient('linear-gradient(135deg,#667eea,#764ba2)')"></div>
-                    <div class="element-card" style="background: linear-gradient(135deg,#f093fb,#f5576c)" onclick="addGradient('linear-gradient(135deg,#f093fb,#f5576c)')"></div>
-                    <div class="element-card" style="background: linear-gradient(135deg,#4facfe,#00f2fe)" onclick="addGradient('linear-gradient(135deg,#4facfe,#00f2fe)')"></div>
                 </div>
             </div>
         </div>
@@ -472,13 +534,10 @@
                     <div class="color-preset" style="background:#ef4444" onclick="setBg('#ef4444')"></div>
                     <div class="color-preset" style="background:#10b981" onclick="setBg('#10b981')"></div>
                     <div class="color-preset" style="background:#f59e0b" onclick="setBg('#f59e0b')"></div>
-                    <div class="color-preset" style="background:#8b5cf6" onclick="setBg('#8b5cf6')"></div>
-                    <div class="color-preset" style="background:#ec4899" onclick="setBg('#ec4899')"></div>
                 </div>
                 <div class="elements-grid" style="margin-top: 16px;">
                     <div class="element-card" style="background:linear-gradient(135deg,#667eea,#764ba2)" onclick="setBg('linear-gradient(135deg,#667eea,#764ba2)')"></div>
                     <div class="element-card" style="background:linear-gradient(135deg,#f093fb,#f5576c)" onclick="setBg('linear-gradient(135deg,#f093fb,#f5576c)')"></div>
-                    <div class="element-card" style="background:linear-gradient(135deg,#4facfe,#00f2fe)" onclick="setBg('linear-gradient(135deg,#4facfe,#00f2fe)')"></div>
                 </div>
             </div>
         </div>
@@ -495,10 +554,6 @@
                     <i class="fas fa-file-image" style="font-size: 32px;"></i>
                     <div>بوستر إعلاني</div>
                 </div>
-                <div class="element-card" style="background:linear-gradient(135deg,#4facfe,#00f2fe); margin-bottom: 10px; padding: 16px;" onclick="loadTemplate('card')">
-                    <i class="fas fa-id-card" style="font-size: 32px;"></i>
-                    <div>بطاقة أعمال</div>
-                </div>
             </div>
         </div>
 
@@ -509,16 +564,7 @@
                 <div class="elements-grid" style="grid-template-columns: repeat(2, 1fr);">
                     <div class="element-card" style="padding: 12px;" onclick="setCanvasSize(800,600)">800×600</div>
                     <div class="element-card" style="padding: 12px;" onclick="setCanvasSize(1080,1080)">1080×1080</div>
-                    <div class="element-card" style="padding: 12px;" onclick="setCanvasSize(1200,800)">1200×800</div>
                     <div class="element-card" style="padding: 12px;" onclick="setCanvasSize(1920,1080)">1920×1080</div>
-                    <div class="element-card" style="padding: 12px;" onclick="setCanvasSize(3000,2000)">3000×2000</div>
-                </div>
-                <div style="margin-top: 16px;">
-                    <label class="property-label">عرض مخصص (px)</label>
-                    <input type="number" id="customW" class="property-input" placeholder="العرض" style="margin-bottom: 8px;">
-                    <label class="property-label">ارتفاع مخصص (px)</label>
-                    <input type="number" id="customH" class="property-input" placeholder="الارتفاع">
-                    <button class="btn btn-primary" style="width:100%; margin-top: 12px;" onclick="setCustomSize()">تطبيق</button>
                 </div>
             </div>
         </div>
@@ -553,14 +599,17 @@
     let historyIndex = -1;
     let isDragging = false;
     let isResizing = false;
+    let isRotating = false;
     let resizeHandle = null;
     let dragStart = { x: 0, y: 0, left: 0, top: 0 };
-    let resizeStart = { x: 0, y: 0, width: 0, height: 0, left: 0, top: 0 };
+    let resizeStart = { x: 0, y: 0, width: 0, height: 0, left: 0, top: 0, angle: 0 };
+    let snapToGrid = false;
+    let gridSize = 20;
 
     // ===================== التهيئة =====================
     function init() {
         saveHistory();
-        showNotification('مرحباً بك في BildFlow Pro!');
+        showNotification('مرحباً بك! تحكم مثل Canva 🎨');
     }
 
     // ===================== تبديل اللوحات =====================
@@ -577,7 +626,7 @@
         const el = document.createElement('div');
         el.className = 'element';
         el.id = `el_${++elementId}`;
-        const size = 100;
+        const size = 120;
         el.style.left = (canvas.offsetWidth / 2 - size / 2) + 'px';
         el.style.top = (canvas.offsetHeight / 2 - size / 2) + 'px';
         el.style.width = size + 'px';
@@ -590,13 +639,13 @@
             el.style.width = '0';
             el.style.height = '0';
             el.style.background = 'transparent';
-            el.style.borderLeft = '50px solid transparent';
-            el.style.borderRight = '50px solid transparent';
-            el.style.borderBottom = '100px solid #3b82f6';
+            el.style.borderLeft = '60px solid transparent';
+            el.style.borderRight = '60px solid transparent';
+            el.style.borderBottom = '120px solid #3b82f6';
         }
         
         el.dataset.type = 'shape';
-        addHandles(el);
+        addHandlesAndRotate(el);
         canvas.appendChild(el);
         selectElement(el);
         saveHistory();
@@ -604,21 +653,20 @@
     }
 
     function addIcon(type) {
-        const icons = { heart: 'fa-heart', star: 'fa-star', home: 'fa-home', user: 'fa-user', mail: 'fa-envelope' };
+        const icons = { heart: 'fa-heart', star: 'fa-star' };
         const colors = { heart: '#ef4444', star: '#f59e0b' };
         const canvas = document.getElementById('canvas');
         const el = document.createElement('div');
         el.className = 'element';
         el.id = `el_${++elementId}`;
-        el.innerHTML = `<i class="fas ${icons[type]}" style="font-size: 48px; color: ${colors[type] || '#3b82f6'}"></i>`;
+        el.innerHTML = `<i class="fas ${icons[type]}" style="font-size: 56px; color: ${colors[type] || '#3b82f6'}"></i>`;
         el.style.left = (canvas.offsetWidth / 2 - 40) + 'px';
         el.style.top = (canvas.offsetHeight / 2 - 40) + 'px';
         el.dataset.type = 'icon';
-        addHandles(el);
+        addHandlesAndRotate(el);
         canvas.appendChild(el);
         selectElement(el);
         saveHistory();
-        showNotification('تمت إضافة الأيقونة');
     }
 
     function addText() {
@@ -626,15 +674,14 @@
         const el = document.createElement('div');
         el.className = 'element';
         el.id = `el_${++elementId}`;
-        el.innerHTML = 'اكتب هنا';
-        el.style.cssText = 'font-size: 28px; color: #111827; font-family: Segoe UI; left: 300px; top: 280px; padding: 8px; cursor: text;';
+        el.innerHTML = 'اضغط للتحرير';
+        el.style.cssText = 'font-size: 32px; color: #111827; font-family: Segoe UI; left: 300px; top: 280px; padding: 8px; min-width: 150px; cursor: text;';
         el.contentEditable = true;
         el.dataset.type = 'text';
-        addHandles(el);
+        addHandlesAndRotate(el);
         canvas.appendChild(el);
         selectElement(el);
         saveHistory();
-        showNotification('انقر مزدوجاً للتحرير');
     }
 
     function addTextStyle(style) {
@@ -643,29 +690,16 @@
         el.className = 'element';
         el.id = `el_${++elementId}`;
         const styles = {
-            heading: { size: '36px', weight: 'bold', text: 'عنوان رئيسي' },
-            subheading: { size: '24px', weight: '600', text: 'عنوان فرعي' },
-            body: { size: '16px', weight: 'normal', text: 'نص عادي للقراءة' }
+            heading: { size: '42px', weight: 'bold', text: 'عنوان رئيسي' },
+            subheading: { size: '28px', weight: '600', text: 'عنوان فرعي' },
+            body: { size: '18px', weight: 'normal', text: 'نص عادي' }
         };
         const s = styles[style];
         el.innerHTML = s.text;
-        el.style.cssText = `font-size: ${s.size}; font-weight: ${s.weight}; color: #111827; font-family: Segoe UI; left: 250px; top: 280px; padding: 8px; cursor: text;`;
+        el.style.cssText = `font-size: ${s.size}; font-weight: ${s.weight}; color: #111827; font-family: Segoe UI; left: 250px; top: 280px; padding: 8px; min-width: 150px; cursor: text;`;
         el.contentEditable = true;
         el.dataset.type = 'text';
-        addHandles(el);
-        canvas.appendChild(el);
-        selectElement(el);
-        saveHistory();
-    }
-
-    function addGradient(gradient) {
-        const canvas = document.getElementById('canvas');
-        const el = document.createElement('div');
-        el.className = 'element';
-        el.id = `el_${++elementId}`;
-        el.style.cssText = `width: 200px; height: 150px; left: 300px; top: 280px; background: ${gradient}; border-radius: 12px;`;
-        el.dataset.type = 'gradient';
-        addHandles(el);
+        addHandlesAndRotate(el);
         canvas.appendChild(el);
         selectElement(el);
         saveHistory();
@@ -683,7 +717,7 @@
             el.style.cssText = `width: 300px; height: 200px; left: 250px; top: 200px; background-size: cover; background-position: center; border-radius: 8px;`;
             el.style.backgroundImage = `url(${ev.target.result})`;
             el.dataset.type = 'image';
-            addHandles(el);
+            addHandlesAndRotate(el);
             canvas.appendChild(el);
             selectElement(el);
             saveHistory();
@@ -693,8 +727,9 @@
         e.target.value = '';
     }
 
-    // ===================== مقابض التحجيم =====================
-    function addHandles(el) {
+    // ===================== مقابض التحجيم والدوران (مثل Canva) =====================
+    function addHandlesAndRotate(el) {
+        // مقابض التحجيم
         const handles = document.createElement('div');
         handles.className = 'resize-handles';
         ['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'].forEach(pos => {
@@ -704,7 +739,23 @@
             handles.appendChild(h);
         });
         el.appendChild(handles);
-        el.onmousedown = (e) => startDrag(e, el);
+        
+        // مقبض الدوران
+        const rotateHandle = document.createElement('div');
+        rotateHandle.className = 'rotate-handle';
+        rotateHandle.onmousedown = (e) => startRotate(e, el);
+        el.appendChild(rotateHandle);
+        
+        // مؤشر الأبعاد
+        const dimLabel = document.createElement('div');
+        dimLabel.className = 'dimension-label';
+        el.appendChild(dimLabel);
+        
+        // أحداث العنصر
+        el.onmousedown = (e) => {
+            if (e.target.classList.contains('handle') || e.target.classList.contains('rotate-handle')) return;
+            startDrag(e, el);
+        };
         el.ondblclick = (e) => {
             if (el.dataset.type === 'text') {
                 el.contentEditable = true;
@@ -738,17 +789,33 @@
 
     function onDrag(e) {
         if (!isDragging || !selectedElement) return;
-        const dx = e.clientX - dragStart.x;
-        const dy = e.clientY - dragStart.y;
-        selectedElement.style.left = (dragStart.left + dx) + 'px';
-        selectedElement.style.top = (dragStart.top + dy) + 'px';
+        let dx = e.clientX - dragStart.x;
+        let dy = e.clientY - dragStart.y;
+        let newLeft = dragStart.left + dx;
+        let newTop = dragStart.top + dy;
+        
+        // التقاط للشبكة
+        if (snapToGrid) {
+            newLeft = Math.round(newLeft / gridSize) * gridSize;
+            newTop = Math.round(newTop / gridSize) * gridSize;
+        }
+        
+        selectedElement.style.left = newLeft + 'px';
+        selectedElement.style.top = newTop + 'px';
+        
+        // إظهار خطوط المحاذاة
+        showAlignmentGuides(selectedElement);
     }
 
     function stopDrag() {
         isDragging = false;
         document.onmousemove = null;
         document.onmouseup = null;
-        if (selectedElement) saveHistory();
+        if (selectedElement) {
+            saveHistory();
+            updateProperties();
+        }
+        clearAlignmentGuides();
     }
 
     // ===================== التحجيم =====================
@@ -757,13 +824,15 @@
         e.stopPropagation();
         isResizing = true;
         resizeHandle = handle;
+        const rect = el.getBoundingClientRect();
         resizeStart = {
             x: e.clientX,
             y: e.clientY,
             width: el.offsetWidth,
             height: el.offsetHeight,
             left: parseInt(el.style.left) || 0,
-            top: parseInt(el.style.top) || 0
+            top: parseInt(el.style.top) || 0,
+            angle: getRotation(el)
         };
         document.onmousemove = onResize;
         document.onmouseup = stopResize;
@@ -780,320 +849,4 @@
 
         if (resizeHandle.includes('e')) newW = Math.max(30, resizeStart.width + dx);
         if (resizeHandle.includes('s')) newH = Math.max(30, resizeStart.height + dy);
-        if (resizeHandle.includes('w')) { newW = Math.max(30, resizeStart.width - dx); newL = resizeStart.left + (resizeStart.width - newW); }
-        if (resizeHandle.includes('n')) { newH = Math.max(30, resizeStart.height - dy); newT = resizeStart.top + (resizeStart.height - newH); }
-
-        selectedElement.style.width = newW + 'px';
-        selectedElement.style.height = newH + 'px';
-        selectedElement.style.left = newL + 'px';
-        selectedElement.style.top = newT + 'px';
-    }
-
-    function stopResize() {
-        isResizing = false;
-        document.onmousemove = null;
-        document.onmouseup = null;
-        saveHistory();
-        updateProperties();
-    }
-
-    // ===================== اختيار العنصر =====================
-    function selectElement(el) {
-        document.querySelectorAll('.element').forEach(e => e.classList.remove('selected'));
-        if (el) {
-            el.classList.add('selected');
-            selectedElement = el;
-            updateProperties();
-        } else {
-            selectedElement = null;
-            document.getElementById('properties').innerHTML = `
-                <div style="text-align: center; color: var(--text-secondary); padding: 40px;">
-                    <i class="fas fa-mouse-pointer" style="font-size: 48px;"></i>
-                    <div>اختر عنصراً للتعديل</div>
-                </div>`;
-        }
-    }
-
-    // ===================== تحديث الخصائص =====================
-    function updateProperties() {
-        if (!selectedElement) return;
-        const type = selectedElement.dataset.type;
-        const cs = window.getComputedStyle(selectedElement);
-        
-        let html = `
-            <div class="property-group">
-                <div class="property-label">الموقع والحجم</div>
-                <div class="property-row">
-                    <div class="property-col"><input type="number" class="property-input" value="${parseInt(selectedElement.style.left)||0}" onchange="selectedElement.style.left=this.value+'px';saveHistory()" placeholder="X"></div>
-                    <div class="property-col"><input type="number" class="property-input" value="${parseInt(selectedElement.style.top)||0}" onchange="selectedElement.style.top=this.value+'px';saveHistory()" placeholder="Y"></div>
-                </div>
-                <div class="property-row">
-                    <div class="property-col"><input type="number" class="property-input" value="${selectedElement.offsetWidth}" onchange="selectedElement.style.width=this.value+'px';saveHistory()" placeholder="العرض"></div>
-                    <div class="property-col"><input type="number" class="property-input" value="${selectedElement.offsetHeight}" onchange="selectedElement.style.height=this.value+'px';saveHistory()" placeholder="الارتفاع"></div>
-                </div>
-                <div class="property-row">
-                    <div class="property-col"><label class="property-label">الشفافية</label><input type="range" min="0" max="100" value="${Math.round((parseFloat(cs.opacity)||1)*100)}" oninput="selectedElement.style.opacity=this.value/100"></div>
-                </div>
-            </div>`;
-
-        if (type === 'shape' || type === 'gradient') {
-            html += `
-            <div class="property-group">
-                <div class="property-label">اللون</div>
-                <input type="color" value="#3b82f6" onchange="selectedElement.style.background=this.value;saveHistory()">
-                <div class="color-presets">
-                    <div class="color-preset" style="background:#3b82f6" onclick="selectedElement.style.background='#3b82f6';saveHistory()"></div>
-                    <div class="color-preset" style="background:#ef4444" onclick="selectedElement.style.background='#ef4444';saveHistory()"></div>
-                    <div class="color-preset" style="background:#10b981" onclick="selectedElement.style.background='#10b981';saveHistory()"></div>
-                    <div class="color-preset" style="background:#f59e0b" onclick="selectedElement.style.background='#f59e0b';saveHistory()"></div>
-                    <div class="color-preset" style="background:#8b5cf6" onclick="selectedElement.style.background='#8b5cf6';saveHistory()"></div>
-                </div>
-            </div>`;
-        }
-
-        if (type === 'text') {
-            html += `
-            <div class="property-group">
-                <div class="property-label">النص</div>
-                <input type="text" class="property-input" value="${selectedElement.innerText}" onchange="selectedElement.innerText=this.value;saveHistory()">
-                <div class="property-label">حجم الخط</div>
-                <input type="number" class="property-input" value="${parseInt(cs.fontSize)||28}" onchange="selectedElement.style.fontSize=this.value+'px';saveHistory()">
-                <div class="property-label">لون النص</div>
-                <input type="color" value="${rgbToHex(cs.color)}" onchange="selectedElement.style.color=this.value;saveHistory()">
-                <div class="property-label" style="margin-top: 8px;">تنسيق</div>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-secondary" onclick="toggleBold()"><b>B</b></button>
-                    <button class="btn btn-secondary" onclick="toggleItalic()"><i>I</i></button>
-                    <button class="btn btn-secondary" onclick="toggleUnderline()"><u>U</u></button>
-                </div>
-            </div>`;
-        }
-
-        html += `
-            <div class="property-group">
-                <button class="btn btn-secondary" style="width:100%; margin-bottom: 8px;" onclick="duplicateElement()"><i class="fas fa-copy"></i> نسخ</button>
-                <button class="btn btn-secondary" style="width:100%; background:#ef4444; color:white;" onclick="deleteElement()"><i class="fas fa-trash"></i> حذف</button>
-            </div>`;
-
-        document.getElementById('properties').innerHTML = html;
-    }
-
-    function toggleBold() {
-        if (selectedElement) {
-            const isBold = selectedElement.style.fontWeight === 'bold';
-            selectedElement.style.fontWeight = isBold ? 'normal' : 'bold';
-            saveHistory();
-        }
-    }
-
-    function toggleItalic() {
-        if (selectedElement) {
-            const isItalic = selectedElement.style.fontStyle === 'italic';
-            selectedElement.style.fontStyle = isItalic ? 'normal' : 'italic';
-            saveHistory();
-        }
-    }
-
-    function toggleUnderline() {
-        if (selectedElement) {
-            const isUnderline = selectedElement.style.textDecoration === 'underline';
-            selectedElement.style.textDecoration = isUnderline ? 'none' : 'underline';
-            saveHistory();
-        }
-    }
-
-    function changeFont(font) {
-        if (selectedElement && selectedElement.dataset.type === 'text') {
-            selectedElement.style.fontFamily = font;
-            saveHistory();
-        }
-    }
-
-    function duplicateElement() {
-        if (!selectedElement) return;
-        const clone = selectedElement.cloneNode(true);
-        clone.id = `el_${++elementId}`;
-        clone.style.left = (parseInt(selectedElement.style.left) + 30) + 'px';
-        clone.style.top = (parseInt(selectedElement.style.top) + 30) + 'px';
-        addHandles(clone);
-        document.getElementById('canvas').appendChild(clone);
-        selectElement(clone);
-        saveHistory();
-        showNotification('تم نسخ العنصر');
-    }
-
-    function deleteElement() {
-        if (!selectedElement) return;
-        selectedElement.remove();
-        selectedElement = null;
-        updateProperties();
-        saveHistory();
-        showNotification('تم حذف العنصر');
-    }
-
-    // ===================== الخلفية =====================
-    function setBg(value) {
-        document.getElementById('canvas').style.background = value;
-        saveHistory();
-    }
-
-    // ===================== حجم الورقة =====================
-    function setCanvasSize(w, h) {
-        const canvas = document.getElementById('canvas');
-        canvas.style.width = w + 'px';
-        canvas.style.height = h + 'px';
-        document.querySelector('.canvas-wrapper').style.width = w + 'px';
-        document.querySelector('.canvas-wrapper').style.height = h + 'px';
-        saveHistory();
-        showNotification(`تم تغيير الحجم إلى ${w}×${h}`);
-    }
-
-    function setCustomSize() {
-        const w = parseInt(document.getElementById('customW').value);
-        const h = parseInt(document.getElementById('customH').value);
-        if (w > 0 && h > 0) setCanvasSize(w, h);
-        else showNotification('أدخل أبعاد صحيحة');
-    }
-
-    // ===================== القوالب =====================
-    function loadTemplate(type) {
-        const canvas = document.getElementById('canvas');
-        canvas.querySelectorAll('.element').forEach(e => e.remove());
-        if (type === 'social') setCanvasSize(1080, 1080);
-        else if (type === 'poster') setCanvasSize(800, 1200);
-        else setCanvasSize(900, 500);
-        canvas.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
-        const el = document.createElement('div');
-        el.className = 'element';
-        el.id = `el_${++elementId}`;
-        el.innerHTML = type === 'social' ? 'منشور رائع!' : (type === 'poster' ? 'بوستر إعلاني' : 'بطاقة أعمال');
-        el.style.cssText = 'font-size: 48px; font-weight: bold; color: white; left: 50%; top: 50%; transform: translate(-50%, -50%); white-space: nowrap;';
-        el.contentEditable = true;
-        el.dataset.type = 'text';
-        addHandles(el);
-        canvas.appendChild(el);
-        selectElement(el);
-        saveHistory();
-        showNotification('تم تحميل القالب');
-    }
-
-    // ===================== الشبكة =====================
-    function toggleGrid() {
-        document.getElementById('gridOverlay').classList.toggle('visible');
-    }
-
-    // ===================== التاريخ =====================
-    function saveHistory() {
-        const canvas = document.getElementById('canvas');
-        historyIndex++;
-        history = history.slice(0, historyIndex);
-        history.push(canvas.innerHTML);
-        if (history.length > 50) history.shift();
-    }
-
-    function undo() {
-        if (historyIndex > 0) {
-            historyIndex--;
-            restoreState();
-        }
-    }
-
-    function redo() {
-        if (historyIndex < history.length - 1) {
-            historyIndex++;
-            restoreState();
-        }
-    }
-
-    function restoreState() {
-        const canvas = document.getElementById('canvas');
-        canvas.innerHTML = history[historyIndex];
-        canvas.querySelectorAll('.element').forEach(el => addHandles(el));
-        selectElement(null);
-    }
-
-    // ===================== حفظ واستعادة =====================
-    function saveProject() {
-        const canvas = document.getElementById('canvas');
-        const data = {
-            name: document.getElementById('projectName').value,
-            html: canvas.innerHTML,
-            bg: canvas.style.background,
-            w: canvas.style.width,
-            h: canvas.style.height
-        };
-        localStorage.setItem('bildflow_project', JSON.stringify(data));
-        showNotification('تم حفظ المشروع');
-    }
-
-    function loadLastProject() {
-        const saved = localStorage.getItem('bildflow_project');
-        if (saved) {
-            const data = JSON.parse(saved);
-            document.getElementById('projectName').value = data.name;
-            document.getElementById('canvas').innerHTML = data.html;
-            document.getElementById('canvas').style.background = data.bg;
-            if (data.w) document.getElementById('canvas').style.width = data.w;
-            if (data.h) document.getElementById('canvas').style.height = data.h;
-            document.querySelectorAll('.element').forEach(el => addHandles(el));
-            selectElement(null);
-            showNotification('تم تحميل المشروع');
-        } else {
-            showNotification('لا يوجد مشروع محفوظ');
-        }
-    }
-
-    // ===================== التصدير =====================
-    function exportDesign() {
-        const canvas = document.getElementById('canvas');
-        const wrapper = document.querySelector('.canvas-wrapper');
-        const originalTransform = wrapper.style.transform;
-        wrapper.style.transform = 'scale(1)';
-        
-        html2canvas(canvas, { scale: 2, backgroundColor: null }).then(canvasImg => {
-            const link = document.createElement('a');
-            link.download = (document.getElementById('projectName').value || 'design') + '.png';
-            link.href = canvasImg.toDataURL();
-            link.click();
-            wrapper.style.transform = originalTransform;
-            showNotification('تم التصدير بنجاح!');
-        }).catch(() => {
-            wrapper.style.transform = originalTransform;
-            showNotification('حدث خطأ في التصدير');
-        });
-    }
-
-    // ===================== مساعدات =====================
-    function rgbToHex(rgb) {
-        if (!rgb || rgb === 'transparent') return '#000000';
-        const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-        if (!match) return '#000000';
-        return '#' + match.slice(1).map(n => parseInt(n).toString(16().padStart(2, '0'))).join('');
-    }
-
-    function showNotification(msg) {
-        const n = document.createElement('div');
-        n.className = 'notification';
-        n.innerHTML = `<i class="fas fa-info-circle"></i> ${msg}`;
-        document.body.appendChild(n);
-        setTimeout(() => n.remove(), 2000);
-    }
-
-    // ===================== أحداث =====================
-    document.getElementById('workspace').onclick = (e) => {
-        if (e.target === document.getElementById('workspace') || e.target.classList.contains('canvas-wrapper') || e.target.id === 'canvas') {
-            selectElement(null);
-        }
-    };
-
-    document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
-        if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo(); }
-        if (e.key === 'Delete' && selectedElement) deleteElement();
-    });
-
-    // ===================== بدء التشغيل =====================
-    init();
-</script>
-</body>
-</html>
+        if (resizeHandle.includes('w')) { newW =
