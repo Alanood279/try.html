@@ -472,3 +472,100 @@ export default function EditorPage() {
                       return (
                         <Circle
                           key={el.id
+                                                      x={el.x}
+                          y={el.y}
+                          radius={(el.width || 100) / 2}
+                          fill={el.fill}
+                          onClick={() => setSelectedId(el.id)}
+                          onTap={() => setSelectedId(el.id)}
+                          onDragEnd={(e: any) => {
+                            updateElement(el.id, { x: e.target.x(), y: e.target.y() })
+                          }}
+                          draggable
+                          stroke={isSelected ? '#f97316' : undefined}
+                          strokeWidth={isSelected ? 2 : 0}
+                        />
+                      )
+                    }
+
+                    return null
+                  })}
+
+                  {/* Transformer for selected element */}
+                  {selectedId && (
+                    <Transformer
+                      ref={transformerRef}
+                      boundBoxFunc={(oldBox: any, newBox: any) => {
+                        if (Math.abs(newBox.width) < 5 || Math.abs(newBox.height) < 5) {
+                          return oldBox
+                        }
+                        return newBox
+                      }}
+                    />
+                  )}
+                </Layer>
+              </Stage>
+            )}
+          </div>
+        </div>
+
+        {/* Layers Panel (Right Side) */}
+        <div className="absolute top-4 right-4 w-64 glass rounded-xl p-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
+          <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
+            <Layers className="w-4 h-4" />
+            الطبقات ({elements.length})
+          </h3>
+          <div className="space-y-1">
+            {elements.slice().reverse().map((el, index) => (
+              <div
+                key={el.id}
+                onClick={() => setSelectedId(el.id)}
+                className={`p-2 rounded-lg cursor-pointer flex items-center gap-2 text-sm transition-all ${
+                  selectedId === el.id 
+                    ? 'bg-orange-500/20 border border-orange-500/50' 
+                    : 'bg-gray-800/50 hover:bg-gray-700'
+                }`}
+              >
+                <span className="text-xs text-gray-500 w-6">{elements.length - index}</span>
+                <span>
+                  {el.type === 'text' && '📝'}
+                  {el.type === 'rect' && '▭'}
+                  {el.type === 'circle' && '○'}
+                  {el.type === 'image' && '🖼️'}
+                </span>
+                <span className="flex-1 truncate">
+                  {el.type === 'text' ? (el.text?.slice(0, 15) || 'نص') : el.type}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setElements(elements.filter(item => item.id !== el.id))
+                    if (selectedId === el.id) setSelectedId(null)
+                  }}
+                  className="text-red-400 hover:text-red-300 p-1"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Instructions */}
+        <div className="absolute bottom-4 left-4 glass rounded-xl p-4 text-xs text-gray-400 max-w-xs">
+          <h4 className="font-bold text-white mb-2">💡 اختصارات:</h4>
+          <ul className="space-y-1 list-disc list-inside">
+            <li>انقر لتحديد عنصر</li>
+            <li>اسحب لتحريك</li>
+            <li>Delete لحذف</li>
+            <li>Ctrl+S للحفظ</li>
+          </ul>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+// Missing import
+import Link from 'next/link'
+
